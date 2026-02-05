@@ -1,0 +1,24 @@
+# Media-to-Knowledge Pipeline Dependencies
+# Python 3.9+ required
+
+# Speech-to-Text
+openai-whisper>=20231117
+
+# Audio/Video Processing
+ffmpeg-python>=0.2.0
+
+# HTTP Requests
+requests>=2.31.0
+
+# Environment Configuration
+python-dotenv>=1.0.0
+
+# File Type Detection
+filetype>=1.2.0
+
+# Configuration Validation
+pydantic>=2.0.0
+
+# Testing
+pytest>=7.4.0
+pytest-mock>=3.11.0

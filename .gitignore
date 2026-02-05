@@ -1,0 +1,79 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv
+venv/
+env/
+ENV/
+.env/lib/
+.env/include/
+.env/bin/
+
+# Environment Variables
+.env
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project Specific
+output/
+*.wav
+*.mp3
+*.mp4
+*.mov
+*.avi
+*.m4a
+*.flac
+transcripts/
+results/
+
+# Test Data and Outputs
+test_data/audio/
+test_data/videos/
+test_data/outputs/
+outputs/
+outputs/markdown/
+
+# Cache and Temporary Files
+.pytest_cache/
+.coverage
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Log Files
+*.log
+logs/
