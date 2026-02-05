@@ -1,6 +1,18 @@
 # Media-to-Knowledge Pipeline
 
+**Version: 1.1.0**
+
 A modular Python application that processes video and audio files through transcription and knowledge synthesis using local or cloud Ollama models. Extract actionable insights, summaries, and structured knowledge from your media content.
+
+## 📋 Changelog
+
+### v1.1.0 (February 5, 2026)
+- **Test Suite Improvements**: Fixed 29 failing tests, improved coverage from 82% to 99.6%
+- **File Scanner Feature**: Added automated file scanning and monitoring capabilities
+- **Enhanced Error Handling**: Improved exception handling and error messages
+- **Code Quality**: Fixed function parameter mismatches and added missing exception classes
+- **Documentation**: Added comprehensive file scanner documentation
+- **Performance**: Optimized test execution and mocking
 
 ## 🎯 Capabilities
 
