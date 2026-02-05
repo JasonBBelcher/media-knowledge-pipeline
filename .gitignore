@@ -59,12 +59,9 @@ output/
 transcripts/
 results/
 
-# Test Data and Outputs
-test_data/audio/
-test_data/videos/
-test_data/outputs/
-outputs/
-outputs/markdown/
+# Data Directory Contents (keep structure but not generated files)
+data/*/*
+!data/*/.keep
 
 # Cache and Temporary Files
 .pytest_cache/
