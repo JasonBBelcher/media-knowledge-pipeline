@@ -290,6 +290,18 @@ Examples:
   
   # Use a custom prompt
   python main.py --input interview.mp4 --prompt "Summarize the key points: {transcript}"
+  
+  # Scan Downloads directory for media files
+  python main.py scan
+  
+  # Watch Downloads directory for new media files
+  python main.py watch
+  
+  # Scan a custom directory
+  python main.py scan --directory /path/to/media
+  
+  # Watch with custom poll interval
+  python main.py watch --interval 10
 
 Available prompt templates:
   basic_summary, meeting_minutes, lecture_summary, tutorial_guide,
@@ -298,41 +310,142 @@ Available prompt templates:
         """
     )
     
-    parser.add_argument(
+    # Create subparsers for different modes
+    subparsers = parser.add_subparsers(
+        dest="command",
+        help="Command to execute"
+    )
+    
+    # Process command (original functionality)
+    process_parser = subparsers.add_parser(
+        "process",
+        help="Process a single media file"
+    )
+    process_parser.add_argument(
         "--input", "-i",
         required=True,
         help="Path to video or audio file to process"
     )
-    
-    parser.add_argument(
+    process_parser.add_argument(
         "--cloud",
         action="store_true",
         help="Use Ollama Cloud for knowledge synthesis (default: local)"
     )
-    
-    parser.add_argument(
+    process_parser.add_argument(
         "--prompt", "-p",
         help="Prompt template key (e.g., 'meeting_minutes') or custom prompt text"
     )
-    
-    parser.add_argument(
+    process_parser.add_argument(
         "--output", "-o",
         help="Optional output file path for results (JSON format)"
     )
-    
-    parser.add_argument(
+    process_parser.add_argument(
         "--markdown", "-m",
         help="Optional directory path for markdown output (default: outputs/markdown)"
     )
-    
-    parser.add_argument(
+    process_parser.add_argument(
         "--quiet", "-q",
         action="store_true",
         help="Suppress detailed output, only show final results"
     )
     
+    # Scan command
+    scan_parser = subparsers.add_parser(
+        "scan",
+        help="Scan directory for media files and copy to data directories"
+    )
+    scan_parser.add_argument(
+        "--directory", "-d",
+        default="~/Downloads",
+        help="Directory to scan (default: ~/Downloads)"
+    )
+    scan_parser.add_argument(
+        "--audio-dir",
+        default="data/audio",
+        help="Directory for audio files (default: data/audio)"
+    )
+    scan_parser.add_argument(
+        "--video-dir",
+        default="data/videos",
+        help="Directory for video files (default: data/videos)"
+    )
+    scan_parser.add_argument(
+        "--process",
+        action="store_true",
+        help="Automatically process copied files through the pipeline"
+    )
+    scan_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would happen without actually copying files"
+    )
+    scan_parser.add_argument(
+        "--quiet", "-q",
+        action="store_true",
+        help="Suppress detailed output"
+    )
+    
+    # Watch command
+    watch_parser = subparsers.add_parser(
+        "watch",
+        help="Continuously watch directory for new media files"
+    )
+    watch_parser.add_argument(
+        "--directory", "-d",
+        default="~/Downloads",
+        help="Directory to watch (default: ~/Downloads)"
+    )
+    watch_parser.add_argument(
+        "--audio-dir",
+        default="data/audio",
+        help="Directory for audio files (default: data/audio)"
+    )
+    watch_parser.add_argument(
+        "--video-dir",
+        default="data/videos",
+        help="Directory for video files (default: data/videos)"
+    )
+    watch_parser.add_argument(
+        "--process",
+        action="store_true",
+        help="Automatically process copied files through the pipeline"
+    )
+    watch_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would happen without actually copying files"
+    )
+    watch_parser.add_argument(
+        "--interval", "-i",
+        type=int,
+        default=5,
+        help="Poll interval in seconds (default: 5)"
+    )
+    watch_parser.add_argument(
+        "--quiet", "-q",
+        action="store_true",
+        help="Suppress detailed output"
+    )
+    
     args = parser.parse_args()
     
+    # Handle different commands
+    if args.command == "process":
+        # Original processing functionality
+        _handle_process_command(args)
+    elif args.command == "scan":
+        # Scan directory for media files
+        _handle_scan_command(args)
+    elif args.command == "watch":
+        # Watch directory for new media files
+        _handle_watch_command(args)
+    else:
+        # Default to process command for backward compatibility
+        _handle_process_command(args)
+
+
+def _handle_process_command(args):
+    """Handle the process command (original functionality)."""
     # Validate input file exists
     if not Path(args.input).exists():
         print(f"Error: Input file not found: {args.input}", file=sys.stderr)
@@ -386,6 +499,223 @@ Available prompt templates:
         sys.exit(130)
     except Exception as e:
         print(f"\n✗ Unexpected error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _handle_scan_command(args):
+    """Handle the scan command."""
+    try:
+        from core.file_scanner import FileScanner
+        
+        # Print header
+        if not args.quiet:
+            print_separator()
+            print("Media-to-Knowledge Pipeline - File Scanner")
+            print_separator()
+            print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"Scanning directory: {args.directory}")
+            print(f"Audio destination: {args.audio_dir}")
+            print(f"Video destination: {args.video_dir}")
+            if args.process:
+                print("Auto-processing: ENABLED")
+            if args.dry_run:
+                print("Dry run: ENABLED (no files will be copied)")
+            print_separator()
+        
+        # Define processing callback if auto-process is enabled
+        process_callback = None
+        if args.process:
+            def process_file(file_path):
+                if not args.quiet:
+                    print(f"Processing file: {file_path.name}")
+                
+                # Generate output filenames based on input file
+                base_name = file_path.stem
+                json_output = f"outputs/{base_name}_results.json"
+                markdown_dir = "outputs/markdown"
+                
+                # Use the existing process_media function
+                results = process_media(
+                    media_path=str(file_path),
+                    use_cloud_synth=False,  # Use local by default
+                    prompt_template=None
+                )
+                
+                if results["status"] == "success":
+                    # Save JSON results
+                    save_results_to_file(results, json_output)
+                    
+                    # Save markdown synthesis
+                    save_synthesis_to_markdown(results, markdown_dir)
+                    
+                    if not args.quiet:
+                        print(f"✓ Processing completed: {file_path.name}")
+                        print(f"  JSON output: {json_output}")
+                        print(f"  Markdown output: {markdown_dir}/{base_name}.md")
+                else:
+                    print(f"✗ Processing failed: {file_path.name} - {results['error']}")
+            
+            process_callback = process_file
+        
+        # Create scanner instance
+        scanner = FileScanner(
+            scan_directory=args.directory,
+            audio_directory=args.audio_dir,
+            video_directory=args.video_dir,
+            auto_process=args.process,
+            process_callback=process_callback,
+            dry_run=args.dry_run
+        )
+        
+        # Perform scan
+        results = scanner.scan_directory_for_media()
+        
+        # Display summary
+        if not args.quiet:
+            print_separator()
+            print("SCAN SUMMARY")
+            print_separator()
+            
+            copied_files = [r for r in results if r.status == "copied"]
+            dry_run_files = [r for r in results if r.status == "dry_run"]
+            skipped_files = [r for r in results if r.status == "skipped"]
+            error_files = [r for r in results if r.status == "error"]
+            
+            print(f"Files processed: {len(results)}")
+            if args.dry_run:
+                print(f"Files that would be copied: {len(dry_run_files)}")
+            else:
+                print(f"Files copied: {len(copied_files)}")
+            print(f"Files skipped: {len(skipped_files)}")
+            print(f"Files with errors: {len(error_files)}")
+            
+            if copied_files:
+                print("\nCopied files:")
+                for result in copied_files:
+                    print(f"  ✓ {result.file_path.name} -> {result.destination}")
+            
+            if dry_run_files:
+                print("\nFiles that would be copied (dry run):")
+                for result in dry_run_files:
+                    print(f"  📋 {result.file_path.name} -> {result.destination}")
+            
+            if skipped_files:
+                print("\nSkipped files (already exist):")
+                for result in skipped_files:
+                    print(f"  ⚠ {result.file_path.name}")
+            
+            if error_files:
+                print("\nFiles with errors:")
+                for result in error_files:
+                    print(f"  ✗ {result.file_path.name}: {result.error_message}")
+            
+            print_separator()
+            if args.dry_run:
+                print("✓ Dry run completed successfully!")
+            else:
+                print("✓ Scan completed successfully!")
+        
+        sys.exit(0)
+        
+    except KeyboardInterrupt:
+        print("\n\n✗ Scan interrupted by user", file=sys.stderr)
+        sys.exit(130)
+    except Exception as e:
+        print(f"\n✗ Error during scan: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _handle_watch_command(args):
+    """Handle the watch command."""
+    try:
+        from core.file_scanner import FileScanner
+        
+        # Print header
+        if not args.quiet:
+            print_separator()
+            print("Media-to-Knowledge Pipeline - File Watcher")
+            print_separator()
+            print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"Watching directory: {args.directory}")
+            print(f"Audio destination: {args.audio_dir}")
+            print(f"Video destination: {args.video_dir}")
+            print(f"Poll interval: {args.interval} seconds")
+            if args.process:
+                print("Auto-processing: ENABLED")
+            if args.dry_run:
+                print("Dry run: ENABLED (no files will be copied)")
+            print_separator()
+            print("Press Ctrl+C to stop watching")
+            print_separator()
+        
+        # Define processing callback if auto-process is enabled
+        process_callback = None
+        if args.process:
+            def process_file(file_path):
+                if not args.quiet:
+                    print(f"Processing file: {file_path.name}")
+                
+                # Generate output filenames based on input file
+                base_name = file_path.stem
+                json_output = f"outputs/{base_name}_results.json"
+                markdown_dir = "outputs/markdown"
+                
+                # Use the existing process_media function
+                results = process_media(
+                    media_path=str(file_path),
+                    use_cloud_synth=False,  # Use local by default
+                    prompt_template=None
+                )
+                
+                if results["status"] == "success":
+                    # Save JSON results
+                    save_results_to_file(results, json_output)
+                    
+                    # Save markdown synthesis
+                    save_synthesis_to_markdown(results, markdown_dir)
+                    
+                    if not args.quiet:
+                        print(f"✓ Processing completed: {file_path.name}")
+                        print(f"  JSON output: {json_output}")
+                        print(f"  Markdown output: {markdown_dir}/{base_name}.md")
+                else:
+                    print(f"✗ Processing failed: {file_path.name} - {results['error']}")
+            
+            process_callback = process_file
+        
+        # Create scanner instance
+        scanner = FileScanner(
+            scan_directory=args.directory,
+            audio_directory=args.audio_dir,
+            video_directory=args.video_dir,
+            auto_process=args.process,
+            process_callback=process_callback,
+            dry_run=args.dry_run
+        )
+        
+        # Define callback for file processing
+        def on_file_processed(result):
+            if not args.quiet:
+                if result.status == "copied":
+                    print(f"✓ Copied {result.file_type} file: {result.file_path.name}")
+                elif result.status == "dry_run":
+                    print(f"📋 Would copy {result.file_type} file: {result.file_path.name}")
+                elif result.status == "skipped":
+                    print(f"⚠ Skipped {result.file_type} file: {result.file_path.name}")
+                else:
+                    print(f"✗ Error processing {result.file_type} file: {result.file_path.name}")
+        
+        # Start watching
+        scanner.watch_directory(
+            callback=on_file_processed,
+            poll_interval=args.interval
+        )
+        
+    except KeyboardInterrupt:
+        print("\n\n✓ Watch mode stopped by user")
+        sys.exit(0)
+    except Exception as e:
+        print(f"\n✗ Error in watch mode: {e}", file=sys.stderr)
         sys.exit(1)
 
 

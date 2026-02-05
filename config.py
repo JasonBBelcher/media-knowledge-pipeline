@@ -12,6 +12,11 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field, field_validator
 
 
+class ConfigError(Exception):
+    """Custom exception for configuration errors."""
+    pass
+
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -35,6 +40,37 @@ class BaseConfig(BaseModel):
     default_synthesis_prompt_template: str = Field(
         default="basic_summary",
         description="Default prompt template key"
+    )
+    
+    # File Scanner Configuration
+    scan_directory: str = Field(
+        default="~/Downloads",
+        description="Default directory to scan for media files"
+    )
+    
+    audio_directory: str = Field(
+        default="data/audio",
+        description="Directory to copy audio files to"
+    )
+    
+    video_directory: str = Field(
+        default="data/videos",
+        description="Directory to copy video files to"
+    )
+    
+    watch_poll_interval: int = Field(
+        default=5,
+        description="Poll interval for watch mode in seconds"
+    )
+    
+    auto_process: bool = Field(
+        default=False,
+        description="Automatically process files after copying"
+    )
+    
+    skip_existing: bool = Field(
+        default=True,
+        description="Skip files that already exist in destination"
     )
     
     @field_validator("whisper_model_size")
@@ -107,6 +143,12 @@ def get_config(use_cloud: bool = False) -> BaseConfig:
             whisper_model_size=os.getenv("WHISPER_MODEL_SIZE", "small"),
             ollama_model=os.getenv("OLLAMA_MODEL", "llama3.1:8b"),
             default_synthesis_prompt_template=os.getenv("DEFAULT_SYNTHESIS_PROMPT_TEMPLATE", "basic_summary"),
+            scan_directory=os.getenv("MKD_DOWNLOAD_DIR", os.getenv("SCAN_DIRECTORY", "~/Downloads")),
+            audio_directory=os.getenv("AUDIO_DIRECTORY", "data/audio"),
+            video_directory=os.getenv("VIDEO_DIRECTORY", "data/videos"),
+            watch_poll_interval=int(os.getenv("MKD_SCAN_INTERVAL", os.getenv("WATCH_POLL_INTERVAL", "5"))),
+            auto_process=os.getenv("MKD_AUTO_PROCESS", "false").lower() == "true",
+            skip_existing=os.getenv("MKD_SKIP_EXISTING", "true").lower() == "true",
             ollama_cloud_url=os.getenv("OLLAMA_CLOUD_URL", "https://api.ollama.ai/v1"),
             ollama_cloud_api_key=os.getenv("OLLAMA_CLOUD_API_KEY", "")
         )
@@ -115,6 +157,12 @@ def get_config(use_cloud: bool = False) -> BaseConfig:
             whisper_model_size=os.getenv("WHISPER_MODEL_SIZE", "small"),
             ollama_model=os.getenv("OLLAMA_MODEL", "llama3.1:8b"),
             default_synthesis_prompt_template=os.getenv("DEFAULT_SYNTHESIS_PROMPT_TEMPLATE", "basic_summary"),
+            scan_directory=os.getenv("MKD_DOWNLOAD_DIR", os.getenv("SCAN_DIRECTORY", "~/Downloads")),
+            audio_directory=os.getenv("AUDIO_DIRECTORY", "data/audio"),
+            video_directory=os.getenv("VIDEO_DIRECTORY", "data/videos"),
+            watch_poll_interval=int(os.getenv("MKD_SCAN_INTERVAL", os.getenv("WATCH_POLL_INTERVAL", "5"))),
+            auto_process=os.getenv("MKD_AUTO_PROCESS", "false").lower() == "true",
+            skip_existing=os.getenv("MKD_SKIP_EXISTING", "true").lower() == "true",
             ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         )
 

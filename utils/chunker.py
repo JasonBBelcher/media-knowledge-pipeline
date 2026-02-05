@@ -20,6 +20,16 @@ class AudioChunkerError(Exception):
     pass
 
 
+class ChunkerError(Exception):
+    """Custom exception for general chunking errors."""
+    pass
+
+
+class AudioProcessingError(ChunkerError):
+    """Custom exception for audio processing errors."""
+    pass
+
+
 def get_audio_duration(audio_path: str) -> float:
     """
     Get the duration of an audio file in seconds using ffprobe.
@@ -79,7 +89,8 @@ def calculate_chunk_count(duration: float, chunk_duration: float = 600) -> int:
 def split_audio_into_chunks(
     audio_path: str,
     output_dir: str,
-    chunk_duration: float = 600
+    chunk_duration: float = 600,
+    output_prefix: str = None
 ) -> List[str]:
     """
     Split an audio file into multiple chunks using ffmpeg.
@@ -108,12 +119,13 @@ def split_audio_into_chunks(
         
         # Generate output filename base
         audio_name = Path(audio_path).stem
+        prefix = output_prefix if output_prefix else f"{audio_name}_chunk_"
         chunk_paths = []
         
         # Split audio into chunks
         for i in range(num_chunks):
             start_time = i * chunk_duration
-            output_path = Path(output_dir) / f"{audio_name}_chunk_{i:03d}.wav"
+            output_path = Path(output_dir) / f"{prefix}{i:03d}.wav"
             
             # Use ffmpeg to extract chunk
             # -ss: start time

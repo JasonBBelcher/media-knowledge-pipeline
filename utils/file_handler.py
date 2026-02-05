@@ -435,3 +435,120 @@ def format_file_size(size_bytes: int) -> str:
             return f"{size_bytes:.2f} {unit}"
         size_bytes /= 1024.0
     return f"{size_bytes:.2f} PB"
+
+
+def is_audio_file(file_path: Union[str, Path]) -> bool:
+    """
+    Check if a file is an audio file based on its extension.
+    
+    Args:
+        file_path: Path to the file.
+    
+    Returns:
+        True if the file is an audio file, False otherwise.
+    
+    Example:
+        >>> is_audio_file("audio.mp3")
+        True
+        >>> is_audio_file("video.mp4")
+        False
+    """
+    path = Path(file_path)
+    audio_extensions = {".mp3", ".wav", ".m4a", ".flac", ".aac", ".ogg", ".wma"}
+    return path.suffix.lower() in audio_extensions
+
+
+def is_video_file(file_path: Union[str, Path]) -> bool:
+    """
+    Check if a file is a video file based on its extension.
+    
+    Args:
+        file_path: Path to the file.
+    
+    Returns:
+        True if the file is a video file, False otherwise.
+    
+    Example:
+        >>> is_video_file("video.mp4")
+        True
+        >>> is_video_file("audio.mp3")
+        False
+    """
+    path = Path(file_path)
+    video_extensions = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".wmv"}
+    return path.suffix.lower() in video_extensions
+
+
+def is_media_file(file_path: Union[str, Path]) -> bool:
+    """
+    Check if a file is a media file (audio or video) based on its extension.
+    
+    Args:
+        file_path: Path to the file.
+    
+    Returns:
+        True if the file is a media file, False otherwise.
+    
+    Example:
+        >>> is_media_file("video.mp4")
+        True
+        >>> is_media_file("audio.mp3")
+        True
+        >>> is_media_file("document.pdf")
+        False
+    """
+    return is_audio_file(file_path) or is_video_file(file_path)
+
+
+def sanitize_filename(filename: str) -> str:
+    """
+    Sanitize a filename by removing or replacing invalid characters.
+    
+    Args:
+        filename: Original filename.
+    
+    Returns:
+        Sanitized filename with invalid characters replaced.
+    
+    Example:
+        >>> sanitize_filename("file/with\"invalid*chars?.txt")
+        'file_with_invalid_chars_.txt'
+    """
+    import re
+    # Replace invalid characters with underscore
+    sanitized = re.sub(r'[<>:"/\\|?*]', '_', filename)
+    # Remove leading/trailing spaces and dots
+    sanitized = sanitized.strip('. ')
+    return sanitized
+
+
+def get_unique_filename(file_path: Union[str, Path]) -> Path:
+    """
+    Get a unique filename by appending a counter if the file already exists.
+    
+    Args:
+        file_path: Original file path.
+    
+    Returns:
+        Path object with a unique filename.
+    
+    Example:
+        >>> get_unique_filename("file.txt")
+        Path('file.txt')
+        >>> # If file.txt exists, returns Path('file_1.txt')
+    """
+    path = Path(file_path)
+    if not path.exists():
+        return path
+    
+    stem = path.stem
+    suffix = path.suffix
+    directory = path.parent
+    
+    counter = 1
+    while True:
+        new_name = f"{stem}_{counter}{suffix}"
+        new_path = directory / new_name
+        if not new_path.exists():
+            return new_path
+        counter += 1

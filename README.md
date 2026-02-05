@@ -22,12 +22,18 @@ media_knowledge_pipeline/
 ├── config.py               # Configuration management
 ├── requirements.txt        # Python dependencies
 ├── .env.example           # Environment variables template
+├── outputs/               # Generated outputs (JSON and Markdown)
+│   └── markdown/          # Knowledge synthesis in markdown format
+├── data/                  # Media file storage
+│   ├── audio/             # Audio files destination
+│   └── videos/            # Video files destination
 ├── core/                   # Core pipeline modules
 │   ├── __init__.py
 │   ├── media_preprocessor.py  # Video/audio detection and preparation
 │   ├── transcriber.py          # Whisper-based transcription
 │   ├── synthesizer.py          # Ollama knowledge synthesis
-│   └── prompts.py              # Reusable prompt templates
+│   ├── prompts.py              # Reusable prompt templates
+│   └── file_scanner.py         # Automated file scanning and monitoring
 └── utils/                  # Utility functions
     ├── __init__.py
     ├── file_handler.py         # File validation and operations
@@ -158,6 +164,64 @@ python main.py \
   --cloud
 ```
 
+## 🔍 File Scanner Feature
+
+The file scanner provides automated scanning and monitoring of directories for media files, automatically copying them to the appropriate data directories with optional auto-processing through the full pipeline.
+
+### Quick Start
+
+```bash
+# One-time scan of Downloads directory
+python main.py scan
+
+# Continuous monitoring of Downloads directory
+python main.py watch
+
+# Scan and auto-process files through pipeline
+python main.py scan --process --prompt meeting_minutes
+
+# Watch with auto-processing enabled
+python main.py watch --process
+
+# Watch with custom interval and auto-processing
+python main.py watch --interval 10 --process
+
+# Scan custom directory
+python main.py scan --directory /path/to/media
+
+# Dry run (show what would happen without copying)
+python main.py scan --dry-run
+```
+
+### Configuration
+
+Set environment variables in `.env`:
+
+```bash
+# File Scanner Configuration
+MKD_DOWNLOAD_DIR=/custom/path
+MKD_SCAN_INTERVAL=60
+MKD_AUTO_PROCESS=true
+MKD_SKIP_EXISTING=true
+```
+
+### Supported File Formats
+
+**Video**: `.mp4`, `.mov`, `.avi`, `.mkv`, `.webm`, `.flv`, `.wmv` → `data/videos/`
+
+**Audio**: `.mp3`, `.wav`, `.m4a`, `.flac`, `.aac`, `.ogg`, `.wma` → `data/audio/`
+
+### Features
+
+- **Automatic File Detection**: Identifies media files by extension
+- **Smart Organization**: Copies files to appropriate directories
+- **Duplicate Handling**: Skips files that already exist in destination
+- **Auto-processing**: Optionally process files through full pipeline (transcription + synthesis) after copying using `--process` flag
+- **Dry-run Mode**: Preview operations without actual file copying
+- **Continuous Monitoring**: Watch directories for new files in real-time
+- **Cross-platform**: Works on macOS, Linux, and Windows
+- **File Validation**: Skips zero-byte files and partially downloaded files
+
 ## 📝 Available Prompt Templates
 
 | Template | Description |
@@ -195,6 +259,12 @@ OLLAMA_CLOUD_API_KEY=your_api_key_here
 
 # Default Synthesis Settings
 DEFAULT_SYNTHESIS_PROMPT_TEMPLATE=basic_summary
+
+# File Scanner Configuration
+MKD_DOWNLOAD_DIR=~/Downloads
+MKD_SCAN_INTERVAL=5
+MKD_AUTO_PROCESS=false
+MKD_SKIP_EXISTING=true
 ```
 
 ### Whisper Model Sizes
@@ -298,6 +368,19 @@ WHISPER_MODEL_SIZE=tiny  # or base
 ```bash
 pip install -r requirements.txt
 ```
+
+#### 8. "Files not being processed after copying"
+**Solution:** Use the `--process` flag to enable auto-processing:
+```bash
+python main.py scan --process
+python main.py watch --process
+```
+
+#### 9. "Zero-byte files being skipped"
+**Solution:** This is intentional - the system skips incomplete downloads. Wait for files to finish downloading before processing.
+
+#### 10. "Watch mode not detecting new files"
+**Solution:** Ensure files have completed downloading and are not zero bytes. Use `--interval` to adjust polling frequency.
 
 ### Debug Mode
 
