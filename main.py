@@ -56,6 +56,86 @@ def save_results_to_file(results: Dict[str, Any], output_path: str) -> None:
     print(f"\n✓ Results saved to: {output_path}")
 
 
+def generate_intelligent_json_filename(results: Dict[str, Any], base_dir: str = "outputs") -> str:
+    """
+    Generate an intelligent filename for JSON output based on synthesis content.
+    
+    Args:
+        results: Dictionary containing pipeline results.
+        base_dir: Base directory for output files (default: "outputs").
+        
+    Returns:
+        Path to the JSON output file with intelligent filename.
+    """
+    # Use the same LLM-based approach as markdown generation
+    if results["status"] != "success" or not results["synthesis"]:
+        # Fallback to timestamp-based naming if synthesis failed
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        return f"{base_dir}/results_{timestamp}.json"
+    
+    # Extract synthesis text
+    synthesis_text = results["synthesis"]["raw_text"]
+    
+    # Generate descriptive filename using LLM based on the synthesis content
+    try:
+        # Initialize synthesizer to get model connection
+        synthesizer = KnowledgeSynthesizer(use_cloud=False)
+        
+        # Check if we can connect to the model
+        if synthesizer.test_connection():
+            # Create a custom prompt for filename generation
+            filename_prompt = f"""Based on the synthesized content below, provide a short, descriptive subject line that would be suitable as a filename (3-5 words maximum). Focus on the core topic or main concept discussed:
+
+{synthesis_text}
+
+Examples of good subjects:
+- "second_brain_productivity"
+- "ai_meeting_summarization"
+- "cognitive_offloading_systems"
+- "productivity_workflow_optimization"
+
+Respond with ONLY the subject, no other text."""
+            
+            # Generate filename subject using the model with a direct prompt (bypass templates)
+            filename_result = synthesizer.synthesize(
+                transcript=synthesis_text,
+                custom_prompt=filename_prompt
+            )
+            
+            # Extract filename from response
+            if filename_result and "raw_text" in filename_result:
+                generated_subject = filename_result["raw_text"].split('\n')[0].strip()
+                # Clean for filename safety
+                filename = "".join(c for c in generated_subject if c.isalnum() or c in ('_', '-')).lower()
+                if filename and len(filename) >= 3:
+                    return f"{base_dir}/{filename}_results.json"
+                else:
+                    raise ValueError("Generated filename too short")
+            else:
+                raise ValueError("No response from model")
+        else:
+            raise ConnectionError("Cannot connect to model")
+    except Exception as e:
+        # Fallback to source-based naming with timestamp
+        print(f"Warning: Could not generate JSON filename with LLM ({e}), using source-based naming")
+        source_file = Path(results.get('media_file', 'unknown_source'))
+        if source_file.name != 'unknown_source':
+            base_name = source_file.stem
+            # Extract meaningful part from source filename
+            source_parts = [part for part in base_name.split('-') if len(part) > 2][:2]
+            if source_parts:
+                filename = f"{'_'.join(source_parts)}"
+            else:
+                filename = base_name[:20]
+        else:
+            # For YouTube or other sources, use timestamp
+            filename = "youtube_results" if "youtube" in str(source_file).lower() else "results"
+        
+        # Add timestamp to ensure uniqueness
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        return f"{base_dir}/{filename}_{timestamp}.json"
+
+
 def save_synthesis_to_markdown(results: Dict[str, Any], output_dir: str = "outputs/markdown") -> None:
     """
     Save synthesized text to a markdown file with subject as filename.
@@ -602,15 +682,22 @@ def _handle_process_command(args):
         # Display or save results
         if args.output:
             save_results_to_file(results, args.output)
-            if not args.quiet:
-                display_results(results)
         elif args.markdown:
-            # Save to markdown only
+            # Save to markdown only - but still create JSON for consistency
+            json_output_path = generate_intelligent_json_filename(results)
+            save_results_to_file(results, json_output_path)
+            # Save to markdown
             save_synthesis_to_markdown(results, args.markdown)
             if not args.quiet:
                 display_results(results)
+                print(f"✓ JSON results also saved to: {json_output_path}")
         else:
-            display_results(results)
+            # No explicit output specified, generate intelligent filename
+            json_output_path = generate_intelligent_json_filename(results)
+            save_results_to_file(results, json_output_path)
+            if not args.quiet:
+                display_results(results)
+                print(f"✓ Results saved to: {json_output_path}")
         
         # Save to markdown if requested (in addition to JSON)
         if args.markdown and args.output:
@@ -660,11 +747,6 @@ def _handle_scan_command(args):
                 if not args.quiet:
                     print(f"Processing file: {file_path.name}")
                 
-                # Generate output filenames based on input file
-                base_name = file_path.stem
-                json_output = f"outputs/{base_name}_results.json"
-                markdown_dir = "outputs/markdown"
-                
                 # Use the existing process_media function
                 results = process_media(
                     media_path=str(file_path),
@@ -673,6 +755,10 @@ def _handle_scan_command(args):
                 )
                 
                 if results["status"] == "success":
+                    # Generate intelligent JSON filename
+                    json_output = generate_intelligent_json_filename(results)
+                    markdown_dir = "outputs/markdown"
+                    
                     # Save JSON results
                     save_results_to_file(results, json_output)
                     
@@ -682,7 +768,7 @@ def _handle_scan_command(args):
                     if not args.quiet:
                         print(f"✓ Processing completed: {file_path.name}")
                         print(f"  JSON output: {json_output}")
-                        print(f"  Markdown output: {markdown_dir}/{base_name}.md")
+                        print(f"  Markdown output: {markdown_dir}/")
                 else:
                     print(f"✗ Processing failed: {file_path.name} - {results['error']}")
             
@@ -786,11 +872,6 @@ def _handle_watch_command(args):
                 if not args.quiet:
                     print(f"Processing file: {file_path.name}")
                 
-                # Generate output filenames based on input file
-                base_name = file_path.stem
-                json_output = f"outputs/{base_name}_results.json"
-                markdown_dir = "outputs/markdown"
-                
                 # Use the existing process_media function
                 results = process_media(
                     media_path=str(file_path),
@@ -799,6 +880,10 @@ def _handle_watch_command(args):
                 )
                 
                 if results["status"] == "success":
+                    # Generate intelligent JSON filename
+                    json_output = generate_intelligent_json_filename(results)
+                    markdown_dir = "outputs/markdown"
+                    
                     # Save JSON results
                     save_results_to_file(results, json_output)
                     
@@ -808,7 +893,7 @@ def _handle_watch_command(args):
                     if not args.quiet:
                         print(f"✓ Processing completed: {file_path.name}")
                         print(f"  JSON output: {json_output}")
-                        print(f"  Markdown output: {markdown_dir}/{base_name}.md")
+                        print(f"  Markdown output: {markdown_dir}/")
                 else:
                     print(f"✗ Processing failed: {file_path.name} - {results['error']}")
             
