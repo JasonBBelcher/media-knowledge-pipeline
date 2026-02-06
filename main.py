@@ -576,8 +576,9 @@ def main():
 
 def _handle_process_command(args):
     """Handle the process command (original functionality)."""
-    # Validate input file exists
-    if not Path(args.input).exists():
+    # Validate input file exists (unless it's a YouTube URL)
+    from core.media_preprocessor import is_youtube_url
+    if not is_youtube_url(args.input) and not Path(args.input).exists():
         print(f"Error: Input file not found: {args.input}", file=sys.stderr)
         sys.exit(1)
     
