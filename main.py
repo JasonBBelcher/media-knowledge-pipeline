@@ -510,8 +510,11 @@ def main():
   # Scan a custom directory
   python main.py scan --directory /path/to/media
   
-  # Watch with custom poll interval
+   # Watch with custom poll interval
   python main.py watch --interval 10
+  
+  # Process multiple YouTube URLs from a file
+  python main.py batch --urls youtube_urls.txt --markdown outputs/markdown
 
  Available prompt templates:
   basic_summary, meeting_minutes, lecture_summary, tutorial_guide,
@@ -637,6 +640,46 @@ def main():
         help="Suppress detailed output"
     )
     
+    # Batch command for processing multiple YouTube URLs
+    batch_parser = subparsers.add_parser(
+        "batch",
+        help="Process multiple YouTube URLs from a file"
+    )
+    batch_parser.add_argument(
+        "--urls", "-u",
+        required=True,
+        help="Path to file containing YouTube URLs (one per line)"
+    )
+    batch_parser.add_argument(
+        "--output-dir", "-o",
+        default="outputs",
+        help="Directory for output files (default: outputs)"
+    )
+    batch_parser.add_argument(
+        "--cloud",
+        action="store_true",
+        help="Use Ollama Cloud for knowledge synthesis (default: local)"
+    )
+    batch_parser.add_argument(
+        "--prompt", "-p",
+        help="Prompt template key (e.g., 'meeting_minutes') or custom prompt text"
+    )
+    batch_parser.add_argument(
+        "--markdown", "-m",
+        help="Optional directory path for markdown outputs (default: outputs/markdown)"
+    )
+    batch_parser.add_argument(
+        "--quiet", "-q",
+        action="store_true",
+        help="Suppress detailed output, only show final results"
+    )
+    batch_parser.add_argument(
+        "--parallel", "-j",
+        type=int,
+        default=1,
+        help="Number of parallel processes (default: 1, sequential processing)"
+    )
+    
     args = parser.parse_args()
     
     # Handle different commands
@@ -649,6 +692,9 @@ def main():
     elif args.command == "watch":
         # Watch directory for new media files
         _handle_watch_command(args)
+    elif args.command == "batch":
+        # Process multiple YouTube URLs
+        _handle_batch_command(args)
     else:
         # Default to process command for backward compatibility
         _handle_process_command(args)
@@ -841,7 +887,7 @@ def _handle_scan_command(args):
         print(f"\n✗ Error during scan: {e}", file=sys.stderr)
         sys.exit(1)
 
-
+ 
 def _handle_watch_command(args):
     """Handle the watch command."""
     try:
@@ -933,6 +979,170 @@ def _handle_watch_command(args):
     except Exception as e:
         print(f"\n✗ Error in watch mode: {e}", file=sys.stderr)
         sys.exit(1)
+
+
+def _handle_batch_command(args):
+    """Handle the batch command for processing multiple YouTube URLs."""
+    try:
+        from pathlib import Path
+        import concurrent.futures
+        from core.media_preprocessor import is_youtube_url
+        
+        # Print header
+        if not args.quiet:
+            print_separator()
+            print("Media-to-Knowledge Pipeline - Batch Processing")
+            print_separator()
+            print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"URLs file: {args.urls}")
+            print(f"Output directory: {args.output_dir}")
+            if args.parallel > 1:
+                print(f"Parallel processing: {args.parallel} workers")
+            if args.markdown:
+                print(f"Markdown output directory: {args.markdown}")
+            print_separator()
+        
+        # Validate URLs file exists
+        urls_file = Path(args.urls)
+        if not urls_file.exists():
+            print(f"Error: URLs file not found: {args.urls}", file=sys.stderr)
+            sys.exit(1)
+        
+        # Read URLs from file
+        with open(urls_file, 'r') as f:
+            urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+        
+        # Filter for valid YouTube URLs
+        youtube_urls = [url for url in urls if is_youtube_url(url)]
+        
+        if not youtube_urls:
+            print("No valid YouTube URLs found in the file.", file=sys.stderr)
+            sys.exit(1)
+        
+        print(f"Found {len(youtube_urls)} YouTube URLs to process")
+        if not args.quiet:
+            for i, url in enumerate(youtube_urls, 1):
+                print(f"  {i}. {url}")
+        
+        # Process URLs
+        successful = 0
+        failed = 0
+        
+        if args.parallel > 1:
+            # Parallel processing
+            with concurrent.futures.ThreadPoolExecutor(max_workers=args.parallel) as executor:
+                # Submit all jobs
+                future_to_url = {
+                    executor.submit(_process_single_url, url, args): (url,) 
+                    for url in youtube_urls
+                }
+                
+                # Collect results
+                for future in concurrent.futures.as_completed(future_to_url):
+                    url = future_to_url[future][0]
+                    try:
+                        result = future.result()
+                        if result["status"] == "success":
+                            successful += 1
+                            if not args.quiet:
+                                print(f"✓ Completed: {url}")
+                        else:
+                            failed += 1
+                            if not args.quiet:
+                                print(f"✗ Failed: {url} - {result['error']}")
+                    except Exception as e:
+                        failed += 1
+                        if not args.quiet:
+                            print(f"✗ Error processing: {url} - {e}")
+        else:
+            # Sequential processing
+            for i, url in enumerate(youtube_urls, 1):
+                if not args.quiet:
+                    print(f"\nProcessing URL {i}/{len(youtube_urls)}: {url}")
+                
+                try:
+                    result = _process_single_url(url, args)
+                    if result["status"] == "success":
+                        successful += 1
+                        if not args.quiet:
+                            print(f"✓ Completed {i}: {url}")
+                    else:
+                        failed += 1
+                        if not args.quiet:
+                            print(f"✗ Failed {i}: {url} - {result['error']}")
+                except Exception as e:
+                    failed += 1
+                    if not args.quiet:
+                        print(f"✗ Error processing {i}: {url} - {e}")
+        
+        # Print summary
+        if not args.quiet:
+            print_separator()
+            print("BATCH PROCESSING SUMMARY")
+            print_separator()
+            print(f"Total URLs processed: {len(youtube_urls)}")
+            print(f"Successful: {successful}")
+            print(f"Failed: {failed}")
+            print(f"Success rate: {successful/len(youtube_urls)*100:.1f}%")
+            print_separator()
+            if failed == 0:
+                print("✓ All URLs processed successfully!")
+            else:
+                print(f"⚠ {failed} URLs failed processing.")
+            print_separator()
+        
+        sys.exit(0 if failed == 0 else 1)
+        
+    except KeyboardInterrupt:
+        print("\n\n✗ Batch processing interrupted by user", file=sys.stderr)
+        sys.exit(130)
+    except Exception as e:
+        print(f"\n✗ Error in batch processing: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _process_single_url(url: str, args) -> dict:
+    """
+    Process a single YouTube URL with the pipeline.
+    
+    Args:
+        url: YouTube URL to process
+        args: Command line arguments
+        
+    Returns:
+        Dictionary with processing results
+    """
+    try:
+        # Process the media file
+        results = process_media(
+            media_path=url,
+            use_cloud_synth=args.cloud,
+            prompt_template=args.prompt if args.prompt and not args.prompt.startswith("Summarize") else None,
+            custom_prompt=args.prompt if args.prompt and args.prompt.startswith("Summarize") else None
+        )
+        
+        if results["status"] == "success":
+            # Save JSON results with intelligent naming
+            json_output_path = generate_intelligent_json_filename(results, args.output_dir)
+            save_results_to_file(results, json_output_path)
+            
+            # Save markdown if requested
+            if args.markdown:
+                save_synthesis_to_markdown(results, args.markdown)
+            
+            if not args.quiet:
+                print(f"  Results saved to: {json_output_path}")
+                if args.markdown:
+                    print(f"  Markdown saved to: {args.markdown}")
+        
+        return results
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "url": url,
+            "error": str(e)
+        }
 
 
 if __name__ == "__main__":
