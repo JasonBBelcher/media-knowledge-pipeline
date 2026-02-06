@@ -153,6 +153,19 @@ Provide:
 3. Expected vs Actual Behavior
 4. Root Cause Analysis (if discussed)
 5. Proposed Solutions or Workarounds"""
+    
+    # Utility template for generating descriptive filenames
+    FILENAME_SUBJECT = """Based on the synthesized content below, provide a short, descriptive subject line that would be suitable as a filename (3-5 words maximum). Focus on the core topic or main concept discussed:
+
+{synthesis}
+
+Examples of good subjects:
+- "second_brain_productivity"
+- "ai_meeting_summarization"
+- "cognitive_offloading_systems"
+- "productivity_workflow_optimization"
+
+Respond with ONLY the subject, no other text."""
 
 
 # Dictionary mapping template keys to templates
@@ -180,6 +193,7 @@ PROMPT_TEMPLATES: Dict[str, str] = {
     # Technical templates
     "technical_documentation": PromptTemplates.TECHNICAL_DOCUMENTATION,
     "bug_report_summary": PromptTemplates.BUG_REPORT_SUMMARY,
+    "filename_subject": PromptTemplates.FILENAME_SUBJECT,
 }
 
 
