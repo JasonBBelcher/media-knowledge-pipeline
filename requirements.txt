@@ -7,6 +7,9 @@ openai-whisper>=20231117
 # Audio/Video Processing
 ffmpeg-python>=0.2.0
 
+# YouTube Streaming Support
+yt-dlp>=2026.2.4
+
 # HTTP Requests
 requests>=2.31.0
 

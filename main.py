@@ -396,12 +396,15 @@ def main():
         description="Media-to-Knowledge Pipeline: Extract and synthesize knowledge from video/audio files",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
+ Examples:
   # Process a video file with local Ollama
   python main.py --input video.mp4
   
   # Process an audio file with cloud Ollama
   python main.py --input audio.mp3 --cloud
+  
+  # Process a YouTube video directly
+  python main.py --input "https://www.youtube.com/watch?v=..."
   
   # Use a specific prompt template
   python main.py --input meeting.mp4 --prompt meeting_minutes
@@ -430,7 +433,7 @@ Examples:
   # Watch with custom poll interval
   python main.py watch --interval 10
 
-Available prompt templates:
+ Available prompt templates:
   basic_summary, meeting_minutes, lecture_summary, tutorial_guide,
   project_update, customer_feedback, research_summary, interview_summary,
   blog_post_outline, social_media_content, technical_documentation, bug_report_summary
@@ -451,7 +454,7 @@ Available prompt templates:
     process_parser.add_argument(
         "--input", "-i",
         required=True,
-        help="Path to video or audio file to process"
+        help="Path to video or audio file to process, or YouTube URL"
     )
     process_parser.add_argument(
         "--cloud",

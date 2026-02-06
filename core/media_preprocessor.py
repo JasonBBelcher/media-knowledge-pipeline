@@ -3,10 +3,12 @@ Media Preprocessor Module
 
 Handles detection and preparation of video/audio files for transcription.
 Extracts audio from video files and converts audio formats as needed.
+Also supports streaming YouTube videos directly for processing.
 
 Supported formats:
 - Video: .mp4, .mov, .avi, .mkv, .webm, .flv, .wmv
 - Audio: .mp3, .wav, .m4a, .flac, .aac, .ogg, .wma
+- YouTube: Direct streaming from YouTube URLs
 """
 
 import os
@@ -16,9 +18,21 @@ from pathlib import Path
 from typing import Tuple
 import filetype
 
+# Import yt-dlp for YouTube streaming support
+try:
+    import yt_dlp
+    YT_DLP_AVAILABLE = True
+except ImportError:
+    YT_DLP_AVAILABLE = False
+
 
 class MediaPreprocessorError(Exception):
     """Custom exception for media preprocessing errors."""
+    pass
+
+
+class YouTubeStreamingError(MediaPreprocessorError):
+    """Raised when YouTube streaming fails."""
     pass
 
 
@@ -30,6 +44,126 @@ class UnsupportedMediaTypeError(MediaPreprocessorError):
 class FFmpegNotFoundError(MediaPreprocessorError):
     """Raised when ffmpeg is not available."""
     pass
+
+
+def is_youtube_url(url: str) -> bool:
+    """
+    Check if a URL is a YouTube URL.
+    
+    Args:
+        url: The URL to check.
+        
+    Returns:
+        True if the URL is a YouTube URL, False otherwise.
+    """
+    if not isinstance(url, str):
+        return False
+    
+    youtube_domains = [
+        'youtube.com',
+        'youtu.be',
+        'youtube-nocookie.com'
+    ]
+    
+    return any(domain in url.lower() for domain in youtube_domains)
+
+
+def stream_youtube_audio(youtube_url: str, output_dir: str) -> str:
+    """
+    Stream YouTube video audio directly to a WAV file for transcription.
+    
+    This function uses yt-dlp to extract the audio stream from a YouTube video
+    and pipes it directly to ffmpeg for conversion to WAV format, avoiding
+    the need to download the full video file.
+    
+    Args:
+        youtube_url: YouTube video URL.
+        output_dir: Directory to save the extracted audio file.
+        
+    Returns:
+        Path to the extracted .wav file.
+        
+    Raises:
+        YouTubeStreamingError: If streaming fails.
+        FFmpegNotFoundError: If ffmpeg is not available.
+    """
+    if not YT_DLP_AVAILABLE:
+        raise YouTubeStreamingError(
+            "yt-dlp is not installed. Install it using: pip install yt-dlp"
+        )
+    
+    if not check_ffmpeg_available():
+        raise FFmpegNotFoundError(
+            "ffmpeg is not installed or not available in PATH. "
+            "Install it using: brew install ffmpeg (macOS) or apt-get install ffmpeg (Linux)"
+        )
+    
+    # Validate YouTube URL
+    if not is_youtube_url(youtube_url):
+        raise YouTubeStreamingError(f"Invalid YouTube URL: {youtube_url}")
+    
+    print(f"Streaming audio from YouTube URL: {youtube_url}")
+    
+    try:
+        # Use yt-dlp to extract video info and get direct audio stream URL
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'quiet': True,
+            'no_warnings': True,
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(youtube_url, download=False)
+            video_title = info.get('title', 'youtube_video').replace('/', '_').replace('\\', '_')
+            direct_url = info.get('url')  # Get the direct stream URL
+            print(f"Video title: {video_title}")
+            
+            if not direct_url:
+                raise YouTubeStreamingError("Could not extract direct audio stream URL")
+    
+        # Generate output filename based on video title
+        safe_title = "".join(c for c in video_title if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        safe_title = safe_title.replace(' ', '_')[:50]  # Limit length
+        output_path = Path(output_dir) / f"{safe_title}_youtube.wav"
+        
+        # Ensure output directory exists
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        
+        # Stream directly from YouTube to WAV using ffmpeg
+        # Use the direct URL that yt-dlp provided
+        ffmpeg_cmd = [
+            "ffmpeg",
+            "-i", direct_url,   # Input from direct stream URL
+            "-vn",              # No video
+            "-acodec", "pcm_s16le",  # WAV codec
+            "-ar", "16000",     # 16kHz sample rate (good for Whisper)
+            "-ac", "1",         # Mono
+            "-y",               # Overwrite output file
+            str(output_path)
+        ]
+        
+        print("Streaming and converting audio...")
+        result = subprocess.run(
+            ffmpeg_cmd,
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode != 0:
+            raise YouTubeStreamingError(
+                f"Failed to stream YouTube audio: {result.stderr}"
+            )
+        
+        if not output_path.exists():
+            raise YouTubeStreamingError(
+                "Failed to create output file - streaming may have failed"
+            )
+        
+        print(f"Audio streamed successfully: {output_path}")
+        return str(output_path)
+        
+    except Exception as e:
+        raise YouTubeStreamingError(f"YouTube streaming failed: {str(e)}")
 
 
 def check_ffmpeg_available() -> bool:
@@ -256,26 +390,41 @@ def prepare_audio(input_media_path: str, output_dir: str) -> str:
     This function detects the input file type and processes it accordingly:
     - Video files: Extract audio track to WAV format
     - Audio files: Convert to WAV if needed, or copy if already WAV
+    - YouTube URLs: Stream audio directly from YouTube
     
     Args:
-        input_media_path: Path to the input video or audio file.
+        input_media_path: Path to the input video or audio file, or YouTube URL.
         output_dir: Directory to save the prepared audio file.
-    
+        
     Returns:
         Path to the prepared .wav audio file ready for transcription.
-    
+        
     Raises:
         FileNotFoundError: If the input file does not exist.
         UnsupportedMediaTypeError: If the file type is not supported.
         FFmpegNotFoundError: If ffmpeg is not available.
         MediaPreprocessorError: If processing fails.
-    
+        YouTubeStreamingError: If YouTube streaming fails.
+        
     Example:
         >>> audio_path = prepare_audio("video.mp4", "./output")
         >>> print(audio_path)
         ./output/video_extracted.wav
+        
+        >>> audio_path = prepare_audio("https://youtube.com/watch?v=...", "./output")
+        >>> print(audio_path)
+        ./output/video_title_youtube.wav
     """
-    # Validate input file exists
+    # Handle YouTube URLs specially
+    if is_youtube_url(input_media_path):
+        if not YT_DLP_AVAILABLE:
+            raise YouTubeStreamingError(
+                "yt-dlp is required for YouTube streaming. Install with: pip install yt-dlp"
+            )
+        print("Detected YouTube URL, streaming audio directly...")
+        return stream_youtube_audio(input_media_path, output_dir)
+    
+    # Validate input file exists (for local files)
     if not os.path.exists(input_media_path):
         raise FileNotFoundError(
             f"Input file not found: {input_media_path}"
@@ -299,8 +448,8 @@ def prepare_audio(input_media_path: str, output_dir: str) -> str:
             output_path = convert_audio_to_wav(input_media_path, output_dir)
     else:
         raise UnsupportedMediaTypeError(
-            f"Unsupported media type: {media_type}"
+            f"Unsupported media type: {media_type} ({mime_type})"
         )
     
-    print(f"Audio prepared successfully: {output_path}")
+    print("Audio prepared successfully:", output_path)
     return output_path
