@@ -19,9 +19,11 @@ import sys
 import tempfile
 from pathlib import Path
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 
-from core.media_preprocessor import prepare_audio, MediaPreprocessorError
+from core.media_preprocessor import (prepare_audio, MediaPreprocessorError, 
+                                      is_youtube_url, is_youtube_playlist_url, 
+                                      extract_youtube_playlist_videos)
 from core.transcriber import transcribe_audio, TranscriberError
 from core.synthesizer import KnowledgeSynthesizer, SynthesizerError
 from config import get_config
@@ -348,14 +350,16 @@ def process_media(
         Dictionary containing:
             - status: 'success' or 'error'
             - media_file: Path to input media file
-            - audio_file: Path to prepared audio file
-            - transcript: Transcribed text
+            - audio_file: Path to prepared audio file (or list for playlists)
+            - transcript: Transcribed text (or list for playlists)
             - transcript_length: Length of transcript
             - synthesis: Synthesized knowledge
             - model_used: Ollama model used
             - template_used: Prompt template used
             - processing_time: Total processing time in seconds
             - error: Error message if status is 'error'
+            - is_playlist: Boolean indicating playlist processing
+            - playlist_results: List of individual video results (if playlist)
     
     Raises:
         MediaPreprocessorError: If media preprocessing fails.
@@ -365,6 +369,9 @@ def process_media(
     Example:
         >>> results = process_media("video.mp4", use_cloud_synth=False)
         >>> print(results["synthesis"]["raw_text"])
+        
+        >>> results = process_media("https://youtube.com/playlist?list=...", use_cloud_synth=False)
+        >>> print(f"Processed {len(results['playlist_results'])} videos")
     """
     start_time = datetime.now()
     results = {
@@ -377,7 +384,9 @@ def process_media(
         "model_used": None,
         "template_used": None,
         "processing_time": 0,
-        "error": None
+        "error": None,
+        "is_playlist": False,
+        "playlist_results": None
     }
     
     # Create temporary directory for intermediate files
@@ -387,21 +396,65 @@ def process_media(
             print_section("STEP 1: Media Preprocessing")
             print(f"Input file: {media_path}")
             
-            audio_path = prepare_audio(media_path, temp_dir)
-            results["audio_file"] = audio_path
-            print(f"✓ Audio prepared: {audio_path}")
+            audio_result = prepare_audio(media_path, temp_dir)
             
-            # Step 2: Transcribe audio to text
-            print_section("STEP 2: Speech-to-Text Transcription")
-            
-            config = get_config(use_cloud=False)
-            transcript = transcribe_audio(
-                audio_path,
-                model_size=config.whisper_model_size
-            )
-            results["transcript"] = transcript
-            results["transcript_length"] = len(transcript)
-            print(f"✓ Transcription complete: {len(transcript)} characters")
+            # Handle playlists (returns list) vs single files (returns str)
+            if isinstance(audio_result, list):
+                # This is a playlist - process each video individually
+                results["is_playlist"] = True
+                results["audio_file"] = audio_result
+                playlist_results = []
+                
+                print(f"✓ Audio prepared for {len(audio_result)} videos in playlist")
+                
+                # Process each video individually
+                for i, audio_path in enumerate(audio_result, 1):
+                    print(f"\nProcessing playlist video {i}/{len(audio_result)}")
+                    
+                    # Step 2: Transcribe audio to text
+                    print_section(f"STEP 2.{i}: Speech-to-Text Transcription (Video {i})")
+                    
+                    config = get_config(use_cloud=False)
+                    transcript = transcribe_audio(
+                        audio_path,  # type: ignore
+                        model_size=config.whisper_model_size
+                    )
+                    
+                    video_result = {
+                        "audio_file": audio_path,
+                        "transcript": transcript,
+                        "transcript_length": len(transcript)
+                    }
+                    playlist_results.append(video_result)
+                    
+                    print(f"✓ Transcription complete for video {i}: {len(transcript)} characters")
+                
+                results["playlist_results"] = playlist_results
+                
+                # Combine all transcripts for synthesis
+                combined_transcript = "\n\n--- Video {} ---\n{}".join(
+                    f"{i+1}: {result['transcript']}" for i, result in enumerate(playlist_results)
+                )
+                results["transcript"] = combined_transcript
+                results["transcript_length"] = len(combined_transcript)
+                
+            else:
+                # Single file processing (original behavior)
+                audio_path = audio_result
+                results["audio_file"] = audio_path
+                print(f"✓ Audio prepared: {audio_path}")
+                
+                # Step 2: Transcribe audio to text
+                print_section("STEP 2: Speech-to-Text Transcription")
+                
+                config = get_config(use_cloud=False)
+                transcript = transcribe_audio(
+                    audio_path,
+                    model_size=config.whisper_model_size
+                )
+                results["transcript"] = transcript
+                results["transcript_length"] = len(transcript)
+                print(f"✓ Transcription complete: {len(transcript)} characters")
             
             # Step 3: Synthesize knowledge from transcript
             print_section("STEP 3: Knowledge Synthesis")
@@ -416,7 +469,7 @@ def process_media(
                 )
             
             synthesis_result = synthesizer.synthesize(
-                transcript=transcript,
+                transcript=results["transcript"],
                 prompt_template=prompt_template,
                 custom_prompt=custom_prompt
             )
@@ -532,12 +585,17 @@ def main():
     # Process command (original functionality)
     process_parser = subparsers.add_parser(
         "process",
-        help="Process a single media file"
+        help="Process a single media file or YouTube URL (including playlists)"
     )
     process_parser.add_argument(
         "--input", "-i",
         required=True,
-        help="Path to video or audio file to process, or YouTube URL"
+        help="Path to video or audio file to process, or YouTube URL (including playlists)"
+    )
+    process_parser.add_argument(
+        "--playlist",
+        action="store_true",
+        help="Force treat input as YouTube playlist URL"
     )
     process_parser.add_argument(
         "--cloud",
@@ -702,11 +760,22 @@ def main():
 
 def _handle_process_command(args):
     """Handle the process command (original functionality)."""
+    from core.media_preprocessor import is_youtube_url, is_youtube_playlist_url
+    
     # Validate input file exists (unless it's a YouTube URL)
-    from core.media_preprocessor import is_youtube_url
     if not is_youtube_url(args.input) and not Path(args.input).exists():
         print(f"Error: Input file not found: {args.input}", file=sys.stderr)
         sys.exit(1)
+    
+    # Warn if playlist flag is used with non-playlist URL
+    if args.playlist and not is_youtube_playlist_url(args.input):
+        print(f"Warning: --playlist flag used with non-playlist URL: {args.input}")
+        print("The flag will be ignored as playlist detection is automatic")
+    
+    # Inform user about playlist processing
+    if is_youtube_playlist_url(args.input):
+        print(f"Detected YouTube playlist URL: {args.input}")
+        print("Processing all videos in playlist...")
     
     # Print header
     if not args.quiet:
@@ -1012,8 +1081,26 @@ def _handle_batch_command(args):
         with open(urls_file, 'r') as f:
             urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
         
-        # Filter for valid YouTube URLs
-        youtube_urls = [url for url in urls if is_youtube_url(url)]
+        # Expand playlist URLs and filter for valid YouTube URLs
+        expanded_urls = []
+        for url in urls:
+            if not is_youtube_url(url):
+                continue
+                
+            # Check if it's a playlist URL and expand it
+            if is_youtube_playlist_url(url):
+                try:
+                    video_urls = extract_youtube_playlist_videos(url)
+                    expanded_urls.extend(video_urls)
+                    if not args.quiet:
+                        print(f"Expanded playlist URL to {len(video_urls)} individual videos")
+                except Exception as e:
+                    print(f"Warning: Failed to expand playlist URL {url}: {e}")
+                    expanded_urls.append(url)  # Fallback to original URL
+            else:
+                expanded_urls.append(url)
+        
+        youtube_urls = expanded_urls
         
         if not youtube_urls:
             print("No valid YouTube URLs found in the file.", file=sys.stderr)

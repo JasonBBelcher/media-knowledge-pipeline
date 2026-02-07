@@ -20,8 +20,110 @@ from core.media_preprocessor import (
     detect_media_type,
     extract_audio_from_video,
     convert_audio_to_wav,
-    MediaPreprocessorError
+    is_youtube_url,
+    is_youtube_playlist_url,
+    extract_youtube_playlist_videos,
+    MediaPreprocessorError,
+    YouTubeStreamingError
 )
+
+
+class TestYouTubePlaylistSupport:
+    """Test YouTube playlist support functionality."""
+    
+    @pytest.fixture
+    def mock_yt_dlp(self):
+        """Mock yt-dlp for playlist tests."""
+        with patch('core.media_preprocessor.YT_DLP_AVAILABLE', True):
+            yield
+    
+    @pytest.mark.parametrize("url,expected_youtube,expected_playlist", [
+        ("https://www.youtube.com/watch?v=dQw4w9WgXcQ", True, False),
+        ("https://youtu.be/dQw4w9WgXcQ", True, False),
+        ("https://www.youtube.com/playlist?list=PL1234567890", True, True),
+        ("https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PL1234567890", True, True),
+        ("https://vimeo.com/123456", False, False),
+        ("not_a_url", False, False),
+    ])
+    def test_youtube_url_detection(self, url, expected_youtube, expected_playlist):
+        """Test YouTube URL and playlist detection."""
+        assert is_youtube_url(url) == expected_youtube
+        assert is_youtube_playlist_url(url) == expected_playlist
+    
+    def test_extract_playlist_videos_success(self, mock_yt_dlp):
+        """Test successful playlist extraction."""
+        # Mock playlist info with multiple videos
+        mock_info = {
+            '_type': 'playlist',
+            'title': 'Test Playlist',
+            'entries': [
+                {'id': 'video1', 'url': 'https://www.youtube.com/watch?v=video1', 'title': 'Video 1'},
+                {'id': 'video2', 'url': 'https://www.youtube.com/watch?v=video2', 'title': 'Video 2'},
+                {'id': 'video3', 'url': None, 'title': 'Video 3'},  # URL missing, fallback to ID
+            ]
+        }
+        
+        with patch('core.media_preprocessor.yt_dlp') as mock_yt_dlp_module:
+            mock_ydl_instance = MagicMock()
+            mock_ydl_instance.extract_info.return_value = mock_info
+            mock_yt_dlp_module.YoutubeDL.return_value.__enter__.return_value = mock_ydl_instance
+            
+            playlist_url = "https://www.youtube.com/playlist?list=PL1234567890"
+            video_urls = extract_youtube_playlist_videos(playlist_url)
+            
+            # Check that the extraction was attempted
+            mock_ydl_instance.extract_info.assert_called_once_with(playlist_url, download=False)
+            
+            # Check that URLs were processed correctly (with extract_flat=True, we expect processing)
+            assert len(video_urls) == len(mock_info['entries'])
+            assert video_urls[0] == "https://www.youtube.com/watch?v=video1"
+            if len(video_urls) > 1:
+                assert video_urls[1] == "https://www.youtube.com/watch?v=video2"
+            if len(video_urls) > 2:
+                assert video_urls[2] == "https://www.youtube.com/watch?v=video3"
+    
+    def test_extract_playlist_videos_not_playlist(self, mock_yt_dlp):
+        """Test extraction from non-playlist URL."""
+        mock_info = {
+            '_type': 'video',  # Not a playlist
+            'title': 'A single video'
+        }
+        
+        with patch('core.media_preprocessor.yt_dlp') as mock_yt_dlp_module:
+            mock_ydl_instance = MagicMock()
+            mock_ydl_instance.extract_info.return_value = mock_info
+            mock_yt_dlp_module.YoutubeDL.return_value.__enter__.return_value = mock_ydl_instance
+            
+            playlist_url = "https://www.youtube.com/playlist?list=PL1234567890"
+            
+            with pytest.raises(YouTubeStreamingError, match="URL is not a playlist"):
+                extract_youtube_playlist_videos(playlist_url)
+    
+    def test_extract_playlist_videos_empty_playlist(self, mock_yt_dlp):
+        """Test extraction from empty playlist."""
+        mock_info = {
+            '_type': 'playlist',
+            'title': 'Empty Playlist',
+            'entries': []  # No videos
+        }
+        
+        with patch('core.media_preprocessor.yt_dlp') as mock_yt_dlp_module:
+            mock_ydl_instance = MagicMock()
+            mock_ydl_instance.extract_info.return_value = mock_info
+            mock_yt_dlp_module.YoutubeDL.return_value.__enter__.return_value = mock_ydl_instance
+            
+            playlist_url = "https://www.youtube.com/playlist?list=PL1234567890"
+            
+            with pytest.raises(YouTubeStreamingError, match="Playlist contains no videos"):
+                extract_youtube_playlist_videos(playlist_url)
+    
+    def test_extract_playlist_videos_no_yt_dlp(self):
+        """Test extraction when yt-dlp is not available."""
+        with patch('core.media_preprocessor.YT_DLP_AVAILABLE', False):
+            playlist_url = "https://www.youtube.com/playlist?list=PL1234567890"
+            
+            with pytest.raises(YouTubeStreamingError, match="yt-dlp is not installed"):
+                extract_youtube_playlist_videos(playlist_url)
 
 
 class TestDetectMediaType:

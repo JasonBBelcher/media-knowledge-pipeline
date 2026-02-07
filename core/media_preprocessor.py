@@ -15,7 +15,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, List, Dict, Any, Optional, Union
 import filetype
 
 # Import yt-dlp for YouTube streaming support
@@ -68,6 +68,114 @@ def is_youtube_url(url: str) -> bool:
     return any(domain in url.lower() for domain in youtube_domains)
 
 
+def is_youtube_playlist_url(url: str) -> bool:
+    """
+    Check if a YouTube URL is a playlist URL.
+    
+    Args:
+        url: The YouTube URL to check.
+        
+    Returns:
+        True if the URL is a YouTube playlist URL, False otherwise.
+    """
+    if not is_youtube_url(url):
+        return False
+    
+    # Check for playlist parameter in URL
+    return 'list=' in url.lower() or '/playlist' in url.lower()
+
+
+def extract_youtube_playlist_videos(playlist_url: str) -> List[str]:
+    """
+    Extract video URLs from a YouTube playlist.
+    
+    Args:
+        playlist_url: YouTube playlist URL.
+        
+    Returns:
+        List of individual video URLs from the playlist.
+        
+    Raises:
+        YouTubeStreamingError: If playlist extraction fails.
+    """
+    if not YT_DLP_AVAILABLE:
+        raise YouTubeStreamingError(
+            "yt-dlp is not installed. Install it using: pip install yt-dlp"
+        )
+    
+    if not is_youtube_playlist_url(playlist_url):
+        raise YouTubeStreamingError(f"Not a valid YouTube playlist URL: {playlist_url}")
+    
+    try:
+        ydl_opts: Dict[str, Any] = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': True,  # Only extract metadata, don't download
+            'playliststart': 1,    # Start from first video
+            'playlistend': None,   # No limit (process all videos)
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:  # type: ignore
+            info = ydl.extract_info(playlist_url, download=False)  # type: ignore
+            
+        if info.get('_type') != 'playlist':
+            raise YouTubeStreamingError(f"URL is not a playlist: {playlist_url}")
+        
+        entries = info.get('entries')
+        if not entries:
+            raise YouTubeStreamingError(f"Playlist contains no videos: {playlist_url}")
+        
+        # Extract individual video URLs
+        video_urls: List[str] = []
+        for entry in entries:  # type: ignore
+            if entry.get('url'):
+                video_urls.append(entry['url'])  # type: ignore
+            elif entry.get('id'):
+                # Fallback: construct URL from video ID
+                video_urls.append(f"https://www.youtube.com/watch?v={entry['id']}")  # type: ignore
+        
+        print(f"Extracted {len(video_urls)} videos from playlist: {info.get('title', 'Unknown')}")
+        return video_urls
+            
+    except Exception as e:
+        raise YouTubeStreamingError(f"Failed to extract playlist videos: {str(e)}")
+
+
+def stream_youtube_playlist_audio(playlist_url: str, output_dir: str) -> List[str]:
+    """
+    Process all videos in a YouTube playlist and return list of audio files.
+    
+    Args:
+        playlist_url: YouTube playlist URL.
+        output_dir: Directory to save the extracted audio files.
+        
+    Returns:
+        List of paths to the extracted .wav files.
+        
+    Raises:
+        YouTubeStreamingError: If playlist processing fails.
+    """
+    # First extract video URLs from playlist
+    video_urls = extract_youtube_playlist_videos(playlist_url)
+    
+    # Process each video individually
+    audio_files: List[str] = []
+    for i, video_url in enumerate(video_urls, 1):
+        print(f"Processing playlist video {i}/{len(video_urls)}: {video_url}")
+        try:
+            audio_file = stream_youtube_audio(video_url, output_dir)
+            audio_files.append(audio_file)
+        except Exception as e:
+            print(f"Warning: Failed to process video {i}: {video_url} - {e}")
+            continue
+    
+    if not audio_files:
+        raise YouTubeStreamingError(f"No videos were successfully processed from playlist: {playlist_url}")
+    
+    print(f"Successfully processed {len(audio_files)} videos from playlist")
+    return audio_files
+
+
 def stream_youtube_audio(youtube_url: str, output_dir: str) -> str:
     """
     Stream YouTube video audio directly to a WAV file for transcription.
@@ -106,15 +214,16 @@ def stream_youtube_audio(youtube_url: str, output_dir: str) -> str:
     
     try:
         # Use yt-dlp to extract video info and get direct audio stream URL
-        ydl_opts = {
+        ydl_opts: Dict[str, Any] = {
             'format': 'bestaudio/best',
             'quiet': True,
             'no_warnings': True,
         }
         
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(youtube_url, download=False)
-            video_title = info.get('title', 'youtube_video').replace('/', '_').replace('\\', '_')
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:  # type: ignore
+            info = ydl.extract_info(youtube_url, download=False)  # type: ignore
+            video_title_raw = info.get('title', 'youtube_video')
+            video_title = str(video_title_raw).replace('/', '_').replace('\\', '_') if video_title_raw else 'youtube_video'
             direct_url = info.get('url')  # Get the direct stream URL
             print(f"Video title: {video_title}")
             
@@ -383,7 +492,7 @@ def copy_wav_file(wav_path: str, output_dir: str) -> str:
         ) from e
 
 
-def prepare_audio(input_media_path: str, output_dir: str) -> str:
+def prepare_audio(input_media_path: str, output_dir: str) -> Union[str, List[str]]:
     """
     Prepare audio from a video or audio file for transcription.
     
@@ -391,13 +500,15 @@ def prepare_audio(input_media_path: str, output_dir: str) -> str:
     - Video files: Extract audio track to WAV format
     - Audio files: Convert to WAV if needed, or copy if already WAV
     - YouTube URLs: Stream audio directly from YouTube
+    - YouTube Playlists: Stream audio from all videos in playlist
     
     Args:
         input_media_path: Path to the input video or audio file, or YouTube URL.
-        output_dir: Directory to save the prepared audio file.
+        output_dir: Directory to save the prepared audio file(s).
         
     Returns:
         Path to the prepared .wav audio file ready for transcription.
+        For playlists, returns a list of paths.
         
     Raises:
         FileNotFoundError: If the input file does not exist.
@@ -414,6 +525,10 @@ def prepare_audio(input_media_path: str, output_dir: str) -> str:
         >>> audio_path = prepare_audio("https://youtube.com/watch?v=...", "./output")
         >>> print(audio_path)
         ./output/video_title_youtube.wav
+        
+        >>> audio_paths = prepare_audio("https://youtube.com/playlist?list=...", "./output")
+        >>> print(audio_paths)
+        ['./output/video1_youtube.wav', './output/video2_youtube.wav', ...]
     """
     # Handle YouTube URLs specially
     if is_youtube_url(input_media_path):
@@ -421,8 +536,14 @@ def prepare_audio(input_media_path: str, output_dir: str) -> str:
             raise YouTubeStreamingError(
                 "yt-dlp is required for YouTube streaming. Install with: pip install yt-dlp"
             )
-        print("Detected YouTube URL, streaming audio directly...")
-        return stream_youtube_audio(input_media_path, output_dir)
+        
+        # Check if it's a playlist
+        if is_youtube_playlist_url(input_media_path):
+            print("Detected YouTube playlist, streaming audio from all videos...")
+            return stream_youtube_playlist_audio(input_media_path, output_dir)
+        else:
+            print("Detected YouTube URL, streaming audio directly...")
+            return stream_youtube_audio(input_media_path, output_dir)
     
     # Validate input file exists (for local files)
     if not os.path.exists(input_media_path):

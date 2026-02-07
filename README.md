@@ -176,6 +176,23 @@ python main.py \
   --cloud
 ```
 
+### YouTube Playlist Support
+
+Process entire YouTube playlists automatically:
+
+```bash
+# Process a YouTube playlist
+python main.py --input "https://www.youtube.com/playlist?list=PL8dPuuaLjXtOAKed_MxxWBNaPno5h3Zs8"
+
+# Playlist with custom prompt 
+python main.py --input "https://youtube.com/playlist?list=..." --prompt lecture_summary
+
+# Process YouTube URLs file containing playlists
+python main.py batch --urls youtube_urls.txt
+```
+
+YouTube playlists are automatically detected and expanded into individual videos. Each video is processed separately and combined into a comprehensive synthesis.
+
 ## 🔍 File Scanner Feature
 
 The file scanner provides automated scanning and monitoring of directories for media files, automatically copying them to the appropriate data directories with optional auto-processing through the full pipeline.
