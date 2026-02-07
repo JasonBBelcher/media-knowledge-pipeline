@@ -2,9 +2,26 @@
 
 **Version: 2.2.0**
 
-A modular Python application that processes video and audio files through transcription and knowledge synthesis using local or cloud Ollama models. Extract actionable insights, summaries, and structured knowledge from your media content.
+## The Neural Distillation Protocol
+Directive 80/20: In a universe of infinite data streams, true power lies not in consumption, but in strategic extraction.
+
+Human cognition operates in two primary modes:
+
+Recreational Processing: Passive absorption for neural coherence maintenance.
+
+Tactical Acquisition: Active mining of high-value payloads for world-state manipulation.
+
+This repository is a Knowledge Assimilation Engine. It bypasses the noise of the datasphere to isolate the critical 20% of informational mass that yields 80% of actionable insight. It transforms raw media and documents into structured intelligence, ready for deployment.
 
 ## 📋 Changelog
+
+### v2.4.0 (February 7, 2026)
+- **Document Processing Support**: Added ability to read and synthesize knowledge from PDF, EPUB, and MOBI files using specialized document readers
+- **Document Reader Infrastructure**: Created modular document reader system with factory pattern supporting PyMuPDF, ebooklib, and mobi libraries
+- **Enhanced File Scanner**: Updated file scanner to automatically detect and organize document files (.pdf, .epub, .mobi) alongside media files
+- **Document Metadata Extraction**: Extract document properties including page counts, word counts, and file information for comprehensive processing
+- **Document CLI Commands**: New `document` CLI command with subcommands for processing single documents, batch processing, and format information
+- **Unified Knowledge Synthesis**: Document processing uses the same powerful prompt templates and Ollama models as media processing
 
 ### v2.3.0 (February 7, 2026)
 - **Token-Based Model Selection**: Intelligent model switching based on content volume to prevent context overflow
@@ -42,20 +59,18 @@ A modular Python application that processes video and audio files through transc
 
 ## 🎯 Capabilities
 
-- **Multi-format Support**: Process video (MP4, MOV, AVI) and audio (MP3, WAV, M4A, FLAC) files
-- **Automatic Transcription**: Convert speech to text using OpenAI Whisper
-- **Knowledge Synthesis**: Extract insights using Ollama models (local or cloud)
-- **12 Built-in Prompt Templates**: Meeting minutes, lecture summaries, project updates, and more
-- **Custom Prompts**: Use your own synthesis prompts
-- **Long File Support**: Automatic chunking for files >25 minutes
-- **Flexible Deployment**: Run entirely locally or use cloud Ollama services
-- **Structured Output**: Save results as JSON for further processing
-- **Markdown Export**: Automatically save synthesized knowledge as markdown files with descriptive filenames
-- **User-Friendly CLI**: Modern command-line interface with colorful output and progress indicators
-- **YouTube Playlist Support**: Process entire YouTube playlists automatically
-- **Multi-Source Essay Synthesis**: Generate comprehensive essays from multiple videos with content cohesion checking
-- **Progress Tracking**: Visual progress indicators and percentage tracking during batch processing
-- **Enhanced CLI**: Rich terminal interface with autocomplete and detailed help system
+- **Universal Media Processing**: Process video (MP4, MOV, AVI), audio (MP3, WAV, M4A, FLAC), and documents (PDF, EPUB, MOBI) files
+- **Document Intelligence**: Extract text and synthesize knowledge from PDF, EPUB, and MOBI documents with metadata extraction
+- **Automatic Transcription**: Convert speech to text using OpenAI Whisper with support for long files (>25 minutes)
+- **Knowledge Synthesis**: Extract insights using Ollama models (local or cloud) with 13 built-in prompt templates
+- **Custom Prompts**: Use your own synthesis prompts for specialized knowledge extraction
+- **Flexible Deployment**: Run entirely locally or use cloud Ollama services based on content requirements
+- **Structured Output**: Save results as JSON for further processing with markdown export capabilities
+- **User-Friendly CLI**: Modern command-line interface with colorful output, progress indicators, and autocomplete
+- **YouTube Integration**: Process single videos, entire playlists, or batch URLs with automatic organization
+- **Multi-Source Essay Synthesis**: Generate comprehensive essays from multiple sources with content cohesion checking
+- **File Automation**: Automated scanning and monitoring of directories with smart file organization
+- **Cross-Platform Support**: Works seamlessly on macOS, Linux, and Windows systems
 
 ## 📋 Project Structure
 
@@ -77,7 +92,27 @@ media_knowledge_pipeline/
 │   ├── transcriber.py          # Whisper-based transcription
 │   ├── synthesizer.py          # Ollama knowledge synthesis
 │   ├── prompts.py              # Reusable prompt templates
-│   └── file_scanner.py         # Automated file scanning and monitoring
+│   ├── file_scanner.py         # Automated file scanning and monitoring
+│   └── document_readers/       # Document format readers
+│       ├── __init__.py
+│       ├── base.py             # Base reader class and factory
+│       ├── pdf_reader.py       # PDF text extraction
+│       ├── epub_reader.py      # EPUB content extraction
+│       └── mobi_reader.py      # MOBI document processing
+├── core/                  # Core pipeline modules
+│   ├── __init__.py
+│   ├── media_preprocessor.py  # Video/audio detection and preparation
+│   ├── transcriber.py          # Whisper-based transcription
+│   ├── synthesizer.py          # Ollama knowledge synthesis
+│   ├── prompts.py              # Reusable prompt templates
+│   ├── file_scanner.py         # Automated file scanning and monitoring
+│   ├── document_processor.py    # Document processing integration
+│   └── document_readers/       # Document format readers
+│       ├── __init__.py
+│       ├── base.py             # Base reader class and factory
+│       ├── pdf_reader.py       # PDF text extraction
+│       ├── epub_reader.py      # EPUB content extraction
+│       └── mobi_reader.py      # MOBI document processing
 ├── utils/                 # Utility functions
 │   ├── __init__.py
 │   ├── file_handler.py         # File validation and operations
@@ -98,6 +133,7 @@ media_knowledge_pipeline/
                 ├── playlist.py
                 ├── scan.py
                 ├── watch.py
+                ├── document.py      # Document processing commands
                 └── create_essay.py  # Create essays from existing docs
 ```
 
@@ -130,7 +166,23 @@ sudo apt-get install ffmpeg
 **Windows:**
 Download from [ffmpeg.org](https://ffmpeg.org/download.html) and add to PATH.
 
-### Step 3: Install Ollama (for Local Processing)
+### Step 3: Document Processing Libraries
+
+Document processing libraries are automatically installed with the requirements, but you may need system dependencies:
+
+**macOS:**
+```bash
+# PyMuPDF dependencies (usually installed automatically)
+brew install pkg-config
+```
+
+**Linux:**
+```bash
+# PyMuPDF dependencies
+sudo apt-get install libcairo2-dev gir1.2-poppler-0.18
+```
+
+### Step 6: Install Ollama (for Local Processing)
 
 ```bash
 # macOS/Linux
@@ -150,7 +202,7 @@ cp .env.example .env
 nano .env  # or use your preferred editor
 ```
 
-### Step 5: Verify Installation
+### Step 8: Verify Installation
 
 ```bash
 # Check Python version
@@ -161,6 +213,9 @@ ffmpeg -version
 
 # Check Ollama (if using local)
 ollama list
+
+# Check document processing libraries
+python -c "import fitz; print('PyMuPDF OK'); import ebooklib; print('ebooklib OK'); import mobi; print('mobi OK')"
 ```
 
 ## 💻 Usage
@@ -328,81 +383,12 @@ media-knowledge watch directory --directory ~/Downloads --process
 - **Rich Formatting**: Tables, lists, and formatted output
 - **Verbose Logging**: Detailed operation information when needed
 
-### Legacy CLI Compatibility
-
-The original CLI interface still works for backward compatibility:
-
-```bash
-# Original interface still supported
-python main.py --input video.mp4
-python main.py batch --urls youtube_urls.txt
-python main.py scan
-python main.py watch
-```
-
-## 🚀 Simplified CLI Wrapper
-
-The CLI wrapper provides user-friendly aliases that abstract away Python virtual environment complexity:
-
-### Quick Installation
-
-```bash
-# Install aliases to your shell
-./install.sh
-
-# Source your shell config
-source ~/.zshrc  # or ~/.bashrc
-```
-
-### Usage Examples
-
-```bash
-# Process single YouTube video
-mksynth "https://youtube.com/watch?v=..."
-
-# Process multiple videos
-mksynth "https://youtube.com/video1 https://youtube.com/video2"
-mksynth "https://youtube.com/video1,https://youtube.com/video2"
-
-# Process playlist
-mksynth "https://youtube.com/playlist?list=..."
-
-# Template-specific commands
-mksynth-meeting "https://youtube.com/watch?v=..."
-mksynth-lecture "https://youtube.com/playlist?list=..."
-
-# Batch processing
-mksynth batch --urls urls.txt
-
-# Batch processing with essay synthesis
-mksynth batch --urls urls.txt --essay
-
-# Force essay generation
-mksynth batch --urls urls.txt --essay --force-essay
-```
-
-### Available Commands
-
-**Primary Commands:**
-- `mksynth <url>` - Process YouTube URL(s)
-- `mksynth batch --urls <file>` - Batch process URLs file
-- `mksynth batch --urls <file> --essay` - Batch process URLs and generate comprehensive essay
-- `mksynth scan` - Scan directories for media files
-- `mksynth watch` - Continuous directory monitoring
-
-**Template-Specific Commands:**
-- `mksynth-summary` - Basic summary template
-- `mksynth-meeting` - Meeting minutes template
-- `mksynth-lecture` - Lecture summary template
-- `mksynth-tutorial` - Tutorial guide template
-- `mksynth-project` - Project update template
-- `mksynth-customer` - Customer feedback template
-
 ### Input Formats Supported
 - **Single URL**: Standard YouTube video or playlist URL
 - **Space-delimited**: "url1 url2 url3"
 - **Comma-delimited**: "url1,url2,url3"
 - **File**: Path to file containing URLs (one per line)
+- **Document Files**: PDF, EPUB, and MOBI files for knowledge extraction
 
 ### Features
 - **Automatic Virtual Environment**: No need to activate manually
@@ -410,6 +396,78 @@ mksynth batch --urls urls.txt --essay --force-essay
 - **Template Shortcuts**: Pre-configured prompt aliases
 - **Cross-Platform**: Works on macOS/Linux
 - **Backward Compatible**: Original Python CLI still works
+
+## 📚 Document Processing
+
+Process knowledge from PDF, EPUB, and MOBI documents with the same powerful synthesis capabilities:
+
+### Process Single Documents
+```bash
+# Process a PDF document
+media-knowledge document process document.pdf
+
+# Process with specific prompt template
+media-knowledge document process research_paper.pdf --prompt research_summary
+
+# Use cloud Ollama for better processing
+media-knowledge document process large_book.epub --cloud
+
+# Save results to file
+media-knowledge document process document.mobi --output results.json
+
+# Combine multiple options
+media-knowledge document process book.pdf \
+  --prompt basic_summary \
+  --output book_summary.json \
+  --cloud
+```
+
+### Batch Document Processing
+```bash
+# Process all PDFs in a directory
+media-knowledge document batch /path/to/documents/ --pattern "*.pdf"
+
+# Process all document types with custom pattern
+media-knowledge document batch /path/to/library/ --pattern "*.*"
+
+# Save batch results to file
+media-knowledge document batch ./books/ --output batch_results.json
+
+# Batch processing with cloud models and custom prompt
+media-knowledge document batch ./papers/ \
+  --pattern "*.pdf" \
+  --prompt research_summary \
+  --cloud \
+  --output research_batch.json
+```
+
+### Check Supported Formats
+```bash
+# Show all supported document formats
+media-knowledge document formats
+```
+
+### Document Processing Features
+- **Multi-format Support**: PDF (.pdf), EPUB (.epub), MOBI (.mobi)
+- **Metadata Extraction**: Page counts, file info, document properties
+- **Text Extraction**: Clean text content from all document types
+- **Knowledge Synthesis**: Same powerful Ollama models used for media
+- **Batch Processing**: Process multiple documents efficiently
+- **Progress Tracking**: Visual feedback during processing
+- **Rich Output**: Colorful console display with detailed results
+- **Structured Data**: JSON output for further processing
+
+All document processing commands support the same options as media processing:
+- `--prompt` or `-p`: Use specific prompt template
+- `--custom-prompt` or `-c`: Use custom prompt text
+- `--output` or `-o`: Save results to JSON file
+- `--cloud`: Use cloud Ollama models
+- `--quiet` or `-q`: Suppress detailed output
+
+### Supported Document Libraries
+- **PyMuPDF** (fitz): For PDF text extraction and metadata
+- **ebooklib**: For EPUB content processing
+- **mobi**: For MOBI document processing
 
 ## 🔍 File Scanner Feature
 
@@ -458,6 +516,8 @@ MKD_SKIP_EXISTING=true
 
 **Audio**: `.mp3`, `.wav`, `.m4a`, `.flac`, `.aac`, `.ogg`, `.wma` → `data/audio/`
 
+**Documents**: `.pdf`, `.epub`, `.mobi` → `data/documents/`
+
 ### Features
 
 - **Automatic File Detection**: Identifies media files by extension
@@ -470,6 +530,8 @@ MKD_SKIP_EXISTING=true
 - **File Validation**: Skips zero-byte files and partially downloaded files
 
 ## 📝 Available Prompt Templates
+
+These prompt templates work for extracting knowledge from both media (video/audio transcripts) and documents (PDF/EPUB/MOBI text):
 
 | Template | Description |
 |----------|-------------|
@@ -485,6 +547,10 @@ MKD_SKIP_EXISTING=true
 | `social_media_content` | Engaging posts for social platforms |
 | `technical_documentation` | Clear technical explanations |
 | `bug_report_summary` | Issue description, reproduction, and solutions |
+
+All templates accept text content extracted from either:
+- Media transcripts (video/audio processed through Whisper)
+- Document text (PDF/EPUB/MOBI processed through document readers)
 
 ## ⚙️ Configuration
 
@@ -536,41 +602,56 @@ Recommended models for knowledge synthesis:
 ## 🔧 Pipeline Architecture
 
 ```
-┌─────────────────┐
-│  Media Input    │
-│  (Video/Audio)  │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Preprocessor   │
-│  - Detect type  │
-│  - Extract audio│
-│  - Convert to WAV│
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│   Transcriber   │
-│  - Whisper model│
-│  - Auto-chunking│
-│  (if >25 min)   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│   Synthesizer   │
-│  - Ollama local │
-│  - Ollama cloud │
-│  - Prompt templates│
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│   Output        │
-│  - Console      │
-│  - JSON file    │
-└─────────────────┘
+┌─────────────────────┐
+│   Input Sources     │
+│  (Video/Audio/Docs) │
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐
+│   Content Router    │
+│  - Detect content   │
+│  - Route to handler │
+└─────────┬───────────┘
+          │
+    ┌─────┴─────┐
+    ▼           ▼
+┌─────────┐ ┌───────────────┐
+│ Media   │ │ Documents     │
+│ Handler │ │ Handler       │
+└────┬────┘ └──────┬────────┘
+     │             │
+     ▼             ▼
+┌─────────┐ ┌───────────────┐
+│Preproces│ │Document Readers│
+│ -Detect │ │ -PDF (PyMuPDF)│
+│ -Extract│ │ -EPUB(ebooklib)│
+│ -Convert│ │ -MOBI (mobi)  │
+└────┬────┘ └──────┬────────┘
+     │             │
+     ▼             ▼
+┌─────────┐ ┌───────────────┐
+│Transcrib│ │ Text Extractor│
+│ -Whisper│ │ -Clean text   │
+│ -Chunks │ │ -Metadata     │
+└────┬────┘ └──────┬────────┘
+     │             │
+     └──────┬──────┘
+            ▼
+    ┌───────────────┐
+    │  Synthesizer  │
+    │ -Ollama local │
+    │ -Ollama cloud │
+    │ -Prompt templates│
+    └──────┬────────┘
+           │
+           ▼
+    ┌───────────────┐
+    │    Output     │
+    │  - Console    │
+    │  - JSON file  │
+    │  - Markdown   │
+    └───────────────┘
 ```
 
 ## 🐛 Troubleshooting
@@ -593,6 +674,23 @@ ollama serve
 # In another terminal, verify it's running
 curl http://localhost:11434/api/tags
 ```
+
+#### 3. "Document format not supported" or "ImportError" with document libraries
+**Solution:** Ensure document processing dependencies are installed:
+```bash
+# Reinstall document processing libraries
+pip install PyMuPDF ebooklib mobi
+
+# Check if libraries can be imported
+python -c "import fitz; import ebooklib; import mobi; print('All document libraries OK')"
+```
+
+#### 4. "Failed to extract text from document"
+**Solution:** This may occur with protected or corrupted files. Try:
+- Verify the document file is not password-protected
+- Ensure the file is not corrupted
+- Check file permissions
+- Try processing a different document file
 
 #### 3. "Whisper model not found"
 **Solution:** The model will download automatically on first run. Ensure you have internet connection and sufficient disk space.
@@ -678,8 +776,9 @@ Total processing time: 45.23 seconds
 
 - **API Keys**: Never commit `.env` files to version control
 - **Local Processing**: All processing happens locally by default - no data leaves your machine
-- **Cloud Processing**: When using `--cloud`, your transcript is sent to the cloud endpoint
+- **Cloud Processing**: When using `--cloud`, your transcript or document text is sent to the cloud endpoint
 - **Temporary Files**: Audio files are stored in `temp/` directory and can be deleted after processing
+- **Document Privacy**: Document processing extracts text locally - sensitive documents remain on your machine unless using cloud processing
 
 ## 📚 Advanced Usage
 

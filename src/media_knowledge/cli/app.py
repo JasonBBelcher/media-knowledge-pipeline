@@ -22,7 +22,7 @@ except ImportError:
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from media_knowledge.cli.commands import process, batch, playlist, scan, watch
+from media_knowledge.cli.commands import process, batch, playlist, scan, watch, document
 
 # Import the existing documents essay generator
 try:
@@ -48,6 +48,7 @@ app.add_typer(batch.app, name="batch", help="Process multiple YouTube URLs from 
 app.add_typer(playlist.app, name="playlist", help="Process YouTube playlist")
 app.add_typer(scan.app, name="scan", help="Scan directory for media files")
 app.add_typer(watch.app, name="watch", help="Watch directory for new media files")
+app.add_typer(document.app, name="document", help="Process documents (PDF, EPUB, MOBI)")
 
 
 @app.command()

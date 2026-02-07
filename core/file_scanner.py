@@ -103,6 +103,7 @@ class FileScanner:
         scan_directory: str = "~/Downloads",
         audio_directory: str = "data/audio",
         video_directory: str = "data/videos",
+        document_directory: str = "data/documents",
         supported_extensions: Optional[Dict[str, List[str]]] = None,
         logger: Optional[logging.Logger] = None,
         auto_process: bool = False,
@@ -116,6 +117,7 @@ class FileScanner:
             scan_directory: Directory to scan for media files
             audio_directory: Directory to copy audio files to
             video_directory: Directory to copy video files to
+            document_directory: Directory to copy document files to
             supported_extensions: Dictionary mapping file types to extensions
             logger: Optional logger instance
             auto_process: Whether to automatically process files after copying
@@ -126,16 +128,19 @@ class FileScanner:
         self.scan_directory = Path(scan_directory).expanduser()
         self.audio_directory = Path(audio_directory)
         self.video_directory = Path(video_directory)
+        self.document_directory = Path(document_directory)
         
         # Ensure data directories exist (unless dry run)
         if not dry_run:
             self.audio_directory.mkdir(parents=True, exist_ok=True)
             self.video_directory.mkdir(parents=True, exist_ok=True)
+            self.document_directory.mkdir(parents=True, exist_ok=True)
         
         # Default supported extensions
         self.supported_extensions = supported_extensions or {
             "video": [".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".wmv"],
-            "audio": [".mp3", ".wav", ".m4a", ".flac", ".aac", ".ogg", ".wma"]
+            "audio": [".mp3", ".wav", ".m4a", ".flac", ".aac", ".ogg", ".wma"],
+            "document": [".pdf", ".epub", ".mobi"]
         }
         
         # Set up logging
@@ -164,13 +169,13 @@ class FileScanner:
     
     def _detect_file_type(self, file_path: Path) -> Optional[str]:
         """
-        Detect the type of a media file by extension.
+        Detect the type of a file by extension.
         
         Args:
             file_path: Path to the file
             
         Returns:
-            "audio", "video", or None if not a supported media file
+            "audio", "video", "document", or None if not a supported file
         """
         file_extension = file_path.suffix.lower()
         
@@ -178,6 +183,8 @@ class FileScanner:
             return "video"
         elif file_extension in self.supported_extensions["audio"]:
             return "audio"
+        elif file_extension in self.supported_extensions.get("document", []):
+            return "document"
         
         return None
     
@@ -187,6 +194,8 @@ class FileScanner:
             return self.audio_directory
         elif file_type == "video":
             return self.video_directory
+        elif file_type == "document":
+            return self.document_directory
         else:
             raise FileScannerError(f"Unsupported file type: {file_type}")
     
@@ -437,5 +446,7 @@ class FileScanner:
             "audio_files_copied": len([f for f in self.processed_files 
                                       if self._detect_file_type(f) == "audio"]),
             "video_files_copied": len([f for f in self.processed_files 
-                                      if self._detect_file_type(f) == "video"])
+                                      if self._detect_file_type(f) == "video"]),
+            "document_files_copied": len([f for f in self.processed_files 
+                                         if self._detect_file_type(f) == "document"])
         }
