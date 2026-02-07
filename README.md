@@ -1,10 +1,17 @@
 # Media-to-Knowledge Pipeline
 
-**Version: 1.1.0**
+**Version: 2.0.0**
 
 A modular Python application that processes video and audio files through transcription and knowledge synthesis using local or cloud Ollama models. Extract actionable insights, summaries, and structured knowledge from your media content.
 
 ## 📋 Changelog
+
+### v2.0.0 (February 6, 2026)
+- **Multi-Source Essay Synthesis**: Generate comprehensive essays from multiple YouTube videos or playlists with content cohesion checking
+- **Batch Processing Enhancements**: Added `--essay` and `--force-essay` flags to batch command for automatic essay generation
+- **Content Cohesion Assessment**: Smart evaluation to prevent meaningless synthesis by checking thematic connections between sources
+- **Graceful Degradation**: Automatically retains individual synthesized knowledge when essay synthesis is not appropriate
+- **New Prompt Templates**: Added synthesis_essay and content_cohesion_check templates for advanced knowledge synthesis
 
 ### v1.1.0 (February 5, 2026)
 - **Test Suite Improvements**: Fixed 29 failing tests, improved coverage from 82% to 99.6%
@@ -27,6 +34,7 @@ A modular Python application that processes video and audio files through transc
 - **Markdown Export**: Automatically save synthesized knowledge as markdown files with descriptive filenames
 - **User-Friendly CLI**: Simplified command-line interface with intuitive aliases
 - **YouTube Playlist Support**: Process entire YouTube playlists automatically
+- **Multi-Source Essay Synthesis**: Generate comprehensive essays from multiple videos with content cohesion checking
 
 ## 📋 Project Structure
 
@@ -191,9 +199,32 @@ python main.py --input "https://youtube.com/playlist?list=..." --prompt lecture_
 
 # Process YouTube URLs file containing playlists
 python main.py batch --urls youtube_urls.txt
+
+# Generate comprehensive essay from multiple sources
+python main.py batch --urls youtube_urls.txt --essay
+
+# Force essay generation regardless of content cohesion
+python main.py batch --urls youtube_urls.txt --essay --force-essay
 ```
 
 YouTube playlists are automatically detected and expanded into individual videos. Each video is processed separately and combined into a comprehensive synthesis.
+
+### Multi-Source Essay Synthesis
+
+Generate comprehensive essays from multiple YouTube videos or playlists with intelligent content cohesion checking:
+
+```bash
+# Process multiple videos and generate an essay
+python main.py batch --urls video_list.txt --essay --markdown outputs/markdown
+
+# Parallel processing with essay synthesis
+python main.py batch --urls video_list.txt --parallel 3 --essay
+
+# Force essay generation even for unrelated content
+python main.py batch --urls video_list.txt --essay --force-essay
+```
+
+The essay synthesis feature automatically evaluates thematic connections between sources and prevents meaningless synthesis. When content is sufficiently related, it generates a comprehensive essay integrating insights from all sources.
 
 ## 🚀 Simplified CLI Wrapper
 
@@ -228,6 +259,12 @@ mksynth-lecture "https://youtube.com/playlist?list=..."
 
 # Batch processing
 mksynth batch --urls urls.txt
+
+# Batch processing with essay synthesis
+mksynth batch --urls urls.txt --essay
+
+# Force essay generation
+mksynth batch --urls urls.txt --essay --force-essay
 ```
 
 ### Available Commands
@@ -235,6 +272,7 @@ mksynth batch --urls urls.txt
 **Primary Commands:**
 - `mksynth <url>` - Process YouTube URL(s)
 - `mksynth batch --urls <file>` - Batch process URLs file
+- `mksynth batch --urls <file> --essay` - Batch process URLs and generate comprehensive essay
 - `mksynth scan` - Scan directories for media files
 - `mksynth watch` - Continuous directory monitoring
 
