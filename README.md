@@ -6,6 +6,11 @@ A modular Python application that processes video and audio files through transc
 
 ## 📋 Changelog
 
+### v2.1.0 (February 6, 2026)
+- **Progress Tracking**: Added visual progress indicators and percentage tracking for batch processing
+- **Enhanced Feedback**: Real-time status updates showing current processing phase and ETA
+- **Improved User Experience**: Better visibility into processing pipeline with detailed progress information
+
 ### v2.0.0 (February 6, 2026)
 - **Multi-Source Essay Synthesis**: Generate comprehensive essays from multiple YouTube videos or playlists with content cohesion checking
 - **Batch Processing Enhancements**: Added `--essay` and `--force-essay` flags to batch command for automatic essay generation
@@ -35,6 +40,7 @@ A modular Python application that processes video and audio files through transc
 - **User-Friendly CLI**: Simplified command-line interface with intuitive aliases
 - **YouTube Playlist Support**: Process entire YouTube playlists automatically
 - **Multi-Source Essay Synthesis**: Generate comprehensive essays from multiple videos with content cohesion checking
+- **Progress Tracking**: Visual progress indicators and percentage tracking during batch processing
 
 ## 📋 Project Structure
 

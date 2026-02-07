@@ -21,12 +21,16 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, Any, Union
 
+# Add utils directory to path for progress tracker
+sys.path.insert(0, str(Path(__file__).parent / "utils"))
+
 from core.media_preprocessor import (prepare_audio, MediaPreprocessorError, 
                                       is_youtube_url, is_youtube_playlist_url, 
                                       extract_youtube_playlist_videos)
 from core.transcriber import transcribe_audio, TranscriberError
 from core.synthesizer import KnowledgeSynthesizer, SynthesizerError, EssaySynthesizer
 from config import get_config
+from utils.progress_tracker import init_progress_tracker, get_progress_tracker, start_item_processing, update_processing_phase, complete_item_processing
 
 
 def print_separator(char: str = "=", length: int = 80) -> None:
@@ -345,7 +349,7 @@ def process_media(
         use_cloud_synth: Whether to use Ollama Cloud for synthesis.
         prompt_template: Optional prompt template key (e.g., 'meeting_minutes').
         custom_prompt: Optional custom prompt text (overrides prompt_template).
-    
+        
     Returns:
         Dictionary containing:
             - status: 'success' or 'error'
@@ -373,6 +377,8 @@ def process_media(
         >>> results = process_media("https://youtube.com/playlist?list=...", use_cloud_synth=False)
         >>> print(f"Processed {len(results['playlist_results'])} videos")
     """
+    from utils.progress_tracker import update_processing_phase
+    
     start_time = datetime.now()
     results = {
         "status": "success",
@@ -393,6 +399,7 @@ def process_media(
     with tempfile.TemporaryDirectory(prefix="media_knowledge_") as temp_dir:
         try:
             # Step 1: Prepare audio from media file
+            update_processing_phase("Preparing audio")
             print_section("STEP 1: Media Preprocessing")
             print(f"Input file: {media_path}")
             
@@ -409,9 +416,11 @@ def process_media(
                 
                 # Process each video individually
                 for i, audio_path in enumerate(audio_result, 1):
+                    update_processing_phase(f"Processing playlist video {i}/{len(audio_result)}")
                     print(f"\nProcessing playlist video {i}/{len(audio_result)}")
                     
                     # Step 2: Transcribe audio to text
+                    update_processing_phase("Transcribing audio")
                     print_section(f"STEP 2.{i}: Speech-to-Text Transcription (Video {i})")
                     
                     config = get_config(use_cloud=False)
@@ -445,6 +454,7 @@ def process_media(
                 print(f"✓ Audio prepared: {audio_path}")
                 
                 # Step 2: Transcribe audio to text
+                update_processing_phase("Transcribing audio")
                 print_section("STEP 2: Speech-to-Text Transcription")
                 
                 config = get_config(use_cloud=False)
@@ -457,6 +467,7 @@ def process_media(
                 print(f"✓ Transcription complete: {len(transcript)} characters")
             
             # Step 3: Synthesize knowledge from transcript
+            update_processing_phase("Synthesizing knowledge")
             print_section("STEP 3: Knowledge Synthesis")
             
             synthesizer = KnowledgeSynthesizer(use_cloud=use_cloud_synth)
@@ -491,6 +502,7 @@ def process_media(
     processing_time = (end_time - start_time).total_seconds()
     results["processing_time"] = processing_time
     
+    update_processing_phase("Processing complete")
     return results
 
 
@@ -1125,6 +1137,9 @@ def _handle_batch_command(args):
             for i, url in enumerate(youtube_urls, 1):
                 print(f"  {i}. {url}")
         
+        # Initialize progress tracker
+        progress_tracker = init_progress_tracker(len(youtube_urls), args.quiet)
+        
         # Process URLs
         successful = 0
         failed = 0
@@ -1139,6 +1154,7 @@ def _handle_batch_command(args):
                 }
                 
                 # Collect results and track success/failure
+                completed = 0
                 for future in concurrent.futures.as_completed(future_to_url):
                     url = future_to_url[future][0]
                     try:
@@ -1147,36 +1163,35 @@ def _handle_batch_command(args):
                         if result["status"] == "success":
                             successful += 1
                             if not args.quiet:
-                                print(f"✓ Completed: {url}")
+                                completed += 1
+                                print(f"\n[{completed}/{len(youtube_urls)}] ✓ Completed: {url}")
                         else:
                             failed += 1
                             if not args.quiet:
-                                print(f"✗ Failed: {url} - {result['error']}")
+                                completed += 1
+                                print(f"\n[{completed}/{len(youtube_urls)}] ✗ Failed: {url} - {result['error']}")
                     except Exception as e:
                         failed += 1
                         if not args.quiet:
-                            print(f"✗ Error processing: {url} - {e}")
+                            completed += 1
+                            print(f"\n[{completed}/{len(youtube_urls)}] ✗ Error processing: {url} - {e}")
         else:
             # Sequential processing with result collection
             for i, url in enumerate(youtube_urls, 1):
-                if not args.quiet:
-                    print(f"\nProcessing URL {i}/{len(youtube_urls)}: {url}")
+                start_item_processing(f"URL {i}/{len(youtube_urls)}: {url}")
                 
                 try:
                     result = _process_single_url(url, args)
                     all_results.append(result)  # Collect for essay synthesis
                     if result["status"] == "success":
                         successful += 1
-                        if not args.quiet:
-                            print(f"✓ Completed {i}: {url}")
+                        complete_item_processing(f"{url}", success=True)
                     else:
                         failed += 1
-                        if not args.quiet:
-                            print(f"✗ Failed {i}: {url} - {result['error']}")
+                        complete_item_processing(f"{url} - {result['error']}", success=False)
                 except Exception as e:
                     failed += 1
-                    if not args.quiet:
-                        print(f"✗ Error processing {i}: {url} - {e}")
+                    complete_item_processing(f"{url} - {e}", success=False)
         
         # Handle essay synthesis if requested
         essay_result = None
