@@ -336,3 +336,132 @@ class KnowledgeSynthesizer:
                 return True
         except Exception:
             return False
+
+
+class EssaySynthesizer:
+    """
+    Essay synthesizer for combining multiple knowledge synthesis results.
+    
+    This class handles synthesizing a comprehensive essay from multiple
+    individual video/audio transcript synthesis results.
+    """
+    
+    def __init__(self, synthesizer: KnowledgeSynthesizer):
+        """
+        Initialize the EssaySynthesizer.
+        
+        Args:
+            synthesizer: An existing KnowledgeSynthesizer instance
+        """
+        self.synthesizer = synthesizer
+        
+    def assess_cohesion(self, individual_results: list) -> str:
+        """
+        Assess thematic cohesion of multiple individual synthesis results.
+        
+        Args:
+            individual_results: List of synthesis result dictionaries
+            
+        Returns:
+            String indicating cohesion level: "YES", "NO", or "MARGINAL"
+        """
+        if len(individual_results) < 2:
+            return "NO"
+            
+        # Extract individual summaries
+        individual_summaries = []
+        for result in individual_results:
+            if result.get("status") == "success" and result.get("synthesis"):
+                synthesis = result["synthesis"]
+                if isinstance(synthesis, dict) and "raw_text" in synthesis:
+                    individual_summaries.append(synthesis["raw_text"])
+        
+        if len(individual_summaries) < 2:
+            return "NO"
+        
+        # Format summaries for cohesion check
+        formatted_summaries = "\n--- Individual Summary {} ---\n{}".join(
+            f"{i+1}: {summary}" for i, summary in enumerate(individual_summaries)
+        )
+        
+        # Use content_cohesion_check template
+        try:
+            template = get_template("content_cohesion_check")
+            if not template:
+                raise SynthesizerError("Content cohesion check template not found")
+            
+            formatted_prompt = template.replace("{individual_summaries}", formatted_summaries)
+            
+            if self.synthesizer.use_cloud:
+                response = self.synthesizer._call_cloud_ollama(formatted_prompt)
+            else:
+                response = self.synthesizer._call_local_ollama(formatted_prompt)
+            
+            # Extract YES/NO/MARGINAL from response
+            response = response.strip().upper()
+            if response in ["YES", "NO", "MARGINAL"]:
+                return response
+            else:
+                # Fallback if response format is unexpected
+                return "MARGINAL"
+                
+        except Exception as e:
+            print(f"Warning: Cohesion assessment failed: {e}")
+            return "MARGINAL"
+    
+    def synthesize_essay(self, individual_results: list, combined_transcript: str) -> dict:
+        """
+        Synthesize comprehensive essay from multiple individual results.
+        
+        Args:
+            individual_results: List of synthesis result dictionaries
+            combined_transcript: Full combined transcript text
+            
+        Returns:
+            Dictionary with essay synthesis results
+        """
+        # Extract individual summaries
+        individual_summaries = []
+        for result in individual_results:
+            if result.get("status") == "success" and result.get("synthesis"):
+                synthesis = result["synthesis"]
+                if isinstance(synthesis, dict) and "raw_text" in synthesis:
+                    individual_summaries.append(synthesis["raw_text"])
+        
+        if len(individual_summaries) < 2:
+            raise SynthesizerError("Need at least 2 successful synthesis results for essay")
+        
+        # Format summaries for essay template
+        formatted_summaries = "\n--- Individual Summary {} ---\n{}".join(
+            f"{i+1}: {summary}" for i, summary in enumerate(individual_summaries)
+        )
+        
+        # Use synthesis_essay template
+        template = get_template("synthesis_essay")
+        if not template:
+            raise SynthesizerError("Synthesis essay template not found")
+        
+        formatted_prompt = template.replace("{individual_summaries}", formatted_summaries)
+        formatted_prompt = formatted_prompt.replace("{combined_transcript}", combined_transcript)
+        
+        try:
+            if self.synthesizer.use_cloud:
+                essay_text = self.synthesizer._call_cloud_ollama(formatted_prompt)
+            else:
+                essay_text = self.synthesizer._call_local_ollama(formatted_prompt)
+            
+            return {
+                "status": "success",
+                "raw_text": essay_text,
+                "model_used": self.synthesizer.model,
+                "template_used": "synthesis_essay",
+                "transcript_length": len(combined_transcript),
+                "synthesis_length": len(essay_text),
+                "sources_count": len(individual_summaries)
+            }
+            
+        except Exception as e:
+            return {
+                "status": "error",
+                "error": str(e)
+            }

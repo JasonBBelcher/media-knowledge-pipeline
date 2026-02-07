@@ -25,7 +25,7 @@ from core.media_preprocessor import (prepare_audio, MediaPreprocessorError,
                                       is_youtube_url, is_youtube_playlist_url, 
                                       extract_youtube_playlist_videos)
 from core.transcriber import transcribe_audio, TranscriberError
-from core.synthesizer import KnowledgeSynthesizer, SynthesizerError
+from core.synthesizer import KnowledgeSynthesizer, SynthesizerError, EssaySynthesizer
 from config import get_config
 
 
@@ -737,6 +737,16 @@ def main():
         default=1,
         help="Number of parallel processes (default: 1, sequential processing)"
     )
+    batch_parser.add_argument(
+        "--essay", "-e",
+        action="store_true",
+        help="Generate comprehensive essay from multiple sources after processing"
+    )
+    batch_parser.add_argument(
+        "--force-essay",
+        action="store_true",
+        help="Force essay generation even if content cohesion is questionable"
+    )
     
     args = parser.parse_args()
     
@@ -1055,7 +1065,11 @@ def _handle_batch_command(args):
     try:
         from pathlib import Path
         import concurrent.futures
-        from core.media_preprocessor import is_youtube_url
+        from core.media_preprocessor import is_youtube_url, is_youtube_playlist_url, extract_youtube_playlist_videos
+        from core.synthesizer import EssaySynthesizer, KnowledgeSynthesizer
+        
+        # Initialize results collection for essay synthesis
+        all_results = []
         
         # Print header
         if not args.quiet:
@@ -1116,7 +1130,7 @@ def _handle_batch_command(args):
         failed = 0
         
         if args.parallel > 1:
-            # Parallel processing
+            # Parallel processing with result collection
             with concurrent.futures.ThreadPoolExecutor(max_workers=args.parallel) as executor:
                 # Submit all jobs
                 future_to_url = {
@@ -1124,11 +1138,12 @@ def _handle_batch_command(args):
                     for url in youtube_urls
                 }
                 
-                # Collect results
+                # Collect results and track success/failure
                 for future in concurrent.futures.as_completed(future_to_url):
                     url = future_to_url[future][0]
                     try:
                         result = future.result()
+                        all_results.append(result)  # Collect for essay synthesis
                         if result["status"] == "success":
                             successful += 1
                             if not args.quiet:
@@ -1142,13 +1157,14 @@ def _handle_batch_command(args):
                         if not args.quiet:
                             print(f"✗ Error processing: {url} - {e}")
         else:
-            # Sequential processing
+            # Sequential processing with result collection
             for i, url in enumerate(youtube_urls, 1):
                 if not args.quiet:
                     print(f"\nProcessing URL {i}/{len(youtube_urls)}: {url}")
                 
                 try:
                     result = _process_single_url(url, args)
+                    all_results.append(result)  # Collect for essay synthesis
                     if result["status"] == "success":
                         successful += 1
                         if not args.quiet:
@@ -1162,6 +1178,12 @@ def _handle_batch_command(args):
                     if not args.quiet:
                         print(f"✗ Error processing {i}: {url} - {e}")
         
+        # Handle essay synthesis if requested
+        essay_result = None
+        if args.essay and len(all_results) > 1:
+            print("\n")
+            essay_result = _handle_essay_synthesis(args, all_results)
+        
         # Print summary
         if not args.quiet:
             print_separator()
@@ -1171,6 +1193,17 @@ def _handle_batch_command(args):
             print(f"Successful: {successful}")
             print(f"Failed: {failed}")
             print(f"Success rate: {successful/len(youtube_urls)*100:.1f}%")
+            
+            # Add essay synthesis summary if requested
+            if args.essay and len(all_results) > 1:
+                if essay_result and essay_result.get("status") == "success":
+                    print(f"Essay synthesis: ✓ Generated ({essay_result['sources_count']} sources)")
+                    print(f"Essay saved to: {essay_result.get('file_path', 'Unknown')}")
+                elif essay_result:
+                    print(f"Essay synthesis: ✗ {essay_result.get('error', 'Failed')}")
+                else:
+                    print(f"Essay synthesis: ⚠ Not enough successful results")
+            
             print_separator()
             if failed == 0:
                 print("✓ All URLs processed successfully!")
@@ -1228,6 +1261,92 @@ def _process_single_url(url: str, args) -> dict:
         return {
             "status": "error",
             "url": url,
+            "error": str(e)
+        }
+
+
+def _handle_essay_synthesis(args, individual_results: list) -> dict:
+    """
+    Handle essay synthesis from multiple individual results.
+    
+    Args:
+        args: Command line arguments
+        individual_results: List of individual processing results
+        
+    Returns:
+        Dictionary with essay synthesis results or error
+    """
+    try:
+        from datetime import datetime
+        # Filter successful results
+        successful_results = [r for r in individual_results if r.get("status") == "success"]
+        
+        if len(successful_results) < 2:
+            return {
+                "status": "error",
+                "error": "At least 2 successful processing results required for essay synthesis"
+            }
+        
+        # Extract transcripts and create combined text
+        combined_transcript = ""
+        for i, result in enumerate(successful_results, 1):
+            transcript = result.get("transcript", "")
+            if transcript:
+                combined_transcript += f"\n--- Video {i} Transcript ---\n{transcript}\n"
+        
+        if not combined_transcript.strip():
+            return {
+                "status": "error",
+                "error": "No transcript content available for essay synthesis"
+            }
+        
+        print("\n🤖 Assessing content cohesion for essay synthesis...")
+        
+        # Initialize essay synthesizer
+        synthesizer = KnowledgeSynthesizer(use_cloud=args.cloud)
+        essay_synthesizer = EssaySynthesizer(synthesizer)
+        
+        # Check cohesion first (unless forced)
+        if not args.force_essay:
+            cohesion_result = essay_synthesizer.assess_cohesion(successful_results)
+            
+            if cohesion_result == "NO":
+                return {
+                    "status": "error",
+                    "error": "Sources too diverse for meaningful synthesis"
+                }
+            elif cohesion_result == "MARGINAL":
+                print("⚠ Sources have marginal thematic connection")
+        
+        # Generate essay
+        print("🚀 Generating comprehensive essay...")
+        essay_result = essay_synthesizer.synthesize_essay(successful_results, combined_transcript)
+        
+        # Save essay to file
+        output_dir = Path(args.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate intelligent filename
+        essay_filename = f"essay_synthesis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+        essay_path = output_dir / essay_filename
+        
+        with open(essay_path, 'w', encoding='utf-8') as f:
+            f.write(f"# Essay Synthesis\n")
+            f.write(f"*Generated from {len(successful_results)} sources*\n\n")
+            f.write(essay_result["raw_text"])
+        
+        print(f"✓ Essay saved to: {essay_path}")
+        
+        essay_result["status"] = "success"
+        essay_result["file_path"] = str(essay_path)
+        essay_result["sources_count"] = len(successful_results)
+        
+        return essay_result
+        
+    except Exception as e:
+        print(f"✗ Essay synthesis failed: {e}")
+        return {
+            "status": "error",
             "error": str(e)
         }
 

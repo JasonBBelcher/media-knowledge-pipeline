@@ -167,6 +167,37 @@ Examples of good subjects:
 
 Respond with ONLY the subject, no other text."""
 
+    # Multi-Source Synthesis Templates
+    SYNTHESIS_ESSAY = """Synthesize a comprehensive essay from multiple related transcripts below.
+
+INDIVIDUAL SOURCE SUMMARIES:
+{individual_summaries}
+
+COMBINED FULL TRANSCRIPTS:
+{combined_transcript}
+
+Requirements:
+1. Create a unified narrative connecting themes across sources
+2. Identify common themes, contradictions, or developments
+3. Provide synthesized insights beyond individual summaries
+4. Structure as cohesive essay with introduction, body, conclusion
+5. If sources are too diverse/conflicting, state this clearly in the conclusion
+
+Respond with a well-structured essay that integrates all sources meaningfully."""
+
+    CONTENT_COHESION_CHECK = """Analyze these individual summaries for thematic cohesion:
+
+{individual_summaries}
+
+Determine if they share enough common themes to synthesize effectively.
+
+Respond with ONLY one of these words:
+- YES: if themes strongly overlap and synthesis would be meaningful
+- NO: if no meaningful connection exists
+- MARGINAL: if limited connection exists but synthesis might work
+
+Do not provide any additional text or explanation."""
+
 
 # Dictionary mapping template keys to templates
 PROMPT_TEMPLATES: Dict[str, str] = {
@@ -193,6 +224,12 @@ PROMPT_TEMPLATES: Dict[str, str] = {
     # Technical templates
     "technical_documentation": PromptTemplates.TECHNICAL_DOCUMENTATION,
     "bug_report_summary": PromptTemplates.BUG_REPORT_SUMMARY,
+    
+    # Multi-source synthesis templates
+    "synthesis_essay": PromptTemplates.SYNTHESIS_ESSAY,
+    "content_cohesion_check": PromptTemplates.CONTENT_COHESION_CHECK,
+    
+    # Utility template
     "filename_subject": PromptTemplates.FILENAME_SUBJECT,
 }
 

@@ -75,7 +75,14 @@ class TestPromptTemplates:
         # Access templates through the global PROMPT_TEMPLATES dictionary
         from core.prompts import PROMPT_TEMPLATES
         
+        # Special templates that don't use standard {transcript} placeholder
+        special_templates = {"synthesis_essay", "content_cohesion_check", "filename_subject"}
+        
         for template_name, template_content in PROMPT_TEMPLATES.items():
+            # Skip special templates
+            if template_name in special_templates:
+                continue
+                
             assert "{transcript}" in template_content, \
                 f"Template '{template_name}' missing {{transcript}} placeholder"
 
