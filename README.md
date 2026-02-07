@@ -25,6 +25,8 @@ A modular Python application that processes video and audio files through transc
 - **Flexible Deployment**: Run entirely locally or use cloud Ollama services
 - **Structured Output**: Save results as JSON for further processing
 - **Markdown Export**: Automatically save synthesized knowledge as markdown files with descriptive filenames
+- **User-Friendly CLI**: Simplified command-line interface with intuitive aliases
+- **YouTube Playlist Support**: Process entire YouTube playlists automatically
 
 ## 📋 Project Structure
 
@@ -192,6 +194,70 @@ python main.py batch --urls youtube_urls.txt
 ```
 
 YouTube playlists are automatically detected and expanded into individual videos. Each video is processed separately and combined into a comprehensive synthesis.
+
+## 🚀 Simplified CLI Wrapper
+
+The CLI wrapper provides user-friendly aliases that abstract away Python virtual environment complexity:
+
+### Quick Installation
+
+```bash
+# Install aliases to your shell
+./install.sh
+
+# Source your shell config
+source ~/.zshrc  # or ~/.bashrc
+```
+
+### Usage Examples
+
+```bash
+# Process single YouTube video
+mksynth "https://youtube.com/watch?v=..."
+
+# Process multiple videos
+mksynth "https://youtube.com/video1 https://youtube.com/video2"
+mksynth "https://youtube.com/video1,https://youtube.com/video2"
+
+# Process playlist
+mksynth "https://youtube.com/playlist?list=..."
+
+# Template-specific commands
+mksynth-meeting "https://youtube.com/watch?v=..."
+mksynth-lecture "https://youtube.com/playlist?list=..."
+
+# Batch processing
+mksynth batch --urls urls.txt
+```
+
+### Available Commands
+
+**Primary Commands:**
+- `mksynth <url>` - Process YouTube URL(s)
+- `mksynth batch --urls <file>` - Batch process URLs file
+- `mksynth scan` - Scan directories for media files
+- `mksynth watch` - Continuous directory monitoring
+
+**Template-Specific Commands:**
+- `mksynth-summary` - Basic summary template
+- `mksynth-meeting` - Meeting minutes template
+- `mksynth-lecture` - Lecture summary template
+- `mksynth-tutorial` - Tutorial guide template
+- `mksynth-project` - Project update template
+- `mksynth-customer` - Customer feedback template
+
+### Input Formats Supported
+- **Single URL**: Standard YouTube video or playlist URL
+- **Space-delimited**: "url1 url2 url3"
+- **Comma-delimited**: "url1,url2,url3"
+- **File**: Path to file containing URLs (one per line)
+
+### Features
+- **Automatic Virtual Environment**: No need to activate manually
+- **Smart URL Detection**: Handles multiple input formats
+- **Template Shortcuts**: Pre-configured prompt aliases
+- **Cross-Platform**: Works on macOS/Linux
+- **Backward Compatible**: Original Python CLI still works
 
 ## 🔍 File Scanner Feature
 
