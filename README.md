@@ -1,6 +1,6 @@
 # Media-to-Knowledge Pipeline
 
-**Version: 2.2.0**
+**Version: 2.4.0**
 
 ## The Neural Distillation Protocol
 Directive 80/20: In a universe of infinite data streams, true power lies not in consumption, but in strategic extraction.
