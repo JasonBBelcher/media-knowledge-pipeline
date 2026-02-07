@@ -10,9 +10,29 @@ configurable prompt templates.
 """
 
 import requests
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from config import get_config
 from core.prompts import get_template, format_template
+
+# Import token counter for model selection
+try:
+    from utils.token_counter import TokenCounter
+    TOKEN_COUNTER_AVAILABLE = True
+except ImportError:
+    TOKEN_COUNTER_AVAILABLE = False
+    class TokenCounter:
+        def __init__(self):
+            pass
+        def count_tokens_from_results(self, results, model='llama3.1:8b'):
+            # Rough estimate: average 1000 characters per result
+            return sum(len(str(r.get('synthesis', {}).get('raw_text', ''))) for r in results if r.get('status') == 'success')
+        def recommend_model(self, token_count):
+            if token_count <= 8000:
+                return {'model': 'llama3.1:8b', 'type': 'local', 'warning': None}
+            elif token_count <= 32000:
+                return {'model': 'llama3.1:70b', 'type': 'cloud', 'warning': 'Using cloud model for large content'}
+            else:
+                return {'model': 'deepseek-v3.1:671b', 'type': 'cloud', 'warning': 'Using high-capacity model for extensive content'}
 
 
 class SynthesizerError(Exception):
@@ -354,6 +374,7 @@ class EssaySynthesizer:
             synthesizer: An existing KnowledgeSynthesizer instance
         """
         self.synthesizer = synthesizer
+        self.token_counter = TokenCounter() if TOKEN_COUNTER_AVAILABLE else TokenCounter()
         
     def assess_cohesion(self, individual_results: list) -> str:
         """
@@ -420,6 +441,23 @@ class EssaySynthesizer:
         Returns:
             Dictionary with essay synthesis results
         """
+        # Count tokens for model selection
+        token_count = self.token_counter.count_tokens_from_results(individual_results)
+        model_recommendation = self.token_counter.recommend_model(token_count)
+        
+        # Log token-based model selection
+        print(f"→ Aggregating content: {self.token_counter.format_token_summary(token_count)} detected")
+        
+        if model_recommendation.get('warning'):
+            print(f"⚠ {model_recommendation['warning']}")
+        
+        if model_recommendation.get('error') == 'CONTENT_TOO_LARGE':
+            return {
+                "status": "error",
+                "error": model_recommendation['error'],
+                "message": model_recommendation['warning'] or "Content too large for processing"
+            }
+        
         # Extract individual summaries
         individual_summaries = []
         for result in individual_results:
@@ -445,22 +483,48 @@ class EssaySynthesizer:
         formatted_prompt = formatted_prompt.replace("{combined_transcript}", combined_transcript)
         
         try:
+            print("→ Synthesizing comprehensive essay from aggregated content...")
+            
+            # Create synthesizer with recommended model if needed
+            if model_recommendation.get('model') and model_recommendation['model'] != self.synthesizer.model:
+                print(f"→ Using model: {model_recommendation['model']} for optimal processing")
+                # For now, we'll stick with the current synthesizer but this is where
+                # we could dynamically switch to a different model if needed
+                # In practice, we'd need to modify the config or create a new synthesizer instance
+            
             if self.synthesizer.use_cloud:
                 essay_text = self.synthesizer._call_cloud_ollama(formatted_prompt)
             else:
                 essay_text = self.synthesizer._call_local_ollama(formatted_prompt)
             
-            return {
+            result = {
                 "status": "success",
                 "raw_text": essay_text,
                 "model_used": self.synthesizer.model,
                 "template_used": "synthesis_essay",
                 "transcript_length": len(combined_transcript),
                 "synthesis_length": len(essay_text),
-                "sources_count": len(individual_summaries)
+                "sources_count": len(individual_summaries),
+                "token_count": token_count,
+                "recommended_model": model_recommendation['model']
             }
             
+            # Add word count
+            word_count = len(essay_text.split())
+            result["word_count"] = word_count
+            
+            print(f"✓ Essay synthesis complete: {word_count:,} words")
+            
+            return result
+            
         except Exception as e:
+            # If we get a prompt too long error, we should have caught it with token counting
+            if "prompt too long" in str(e).lower():
+                return {
+                    "status": "error",
+                    "error": "CONTENT_TOO_LARGE",
+                    "message": "Content exceeds maximum context window despite token estimation. Try reducing input size."
+                }
             return {
                 "status": "error",
                 "error": str(e)

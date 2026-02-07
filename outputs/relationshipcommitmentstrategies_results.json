@@ -1,0 +1,21 @@
+{
+  "status": "success",
+  "media_file": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  "audio_file": "/var/folders/g1/nd4gy981295dn1ts1pjcb61c0000gn/T/media_knowledge_lsotscj_/Rick_Astley_-_Never_Gonna_Give_You_Up_Official_Vid_youtube.wav",
+  "transcript": "Music We're no strangers to love You know the rules and so do I I feel commitments while I'm thinking of You wouldn't get this from any other guy I just wanna tell you how I'm feeling Gotta make you understand Never gonna give you up Never gonna let you down Never gonna run around and desert you Never gonna make you cry Never gonna say goodbye Never gonna tell a lie And hurt you We've known each other for so long Your heart's been aching but You're too shy to say it Inside we both know what's been going on We know the game and we're gonna play it And if you ask me how I'm feeling Don't tell me or to my disease Never gonna give you up Never gonna let you down Never gonna run around and desert you Never gonna make you cry Never gonna say goodbye Never gonna tell a lie And hurt you Never gonna give you up Never gonna let you down Never gonna run around and desert you Never gonna make you cry Never gonna say goodbye Never gonna tell a lie And hurt you Give you up Give you up Give you up Never gonna give Give you up Never gonna give Give you up We've known each other for so long Your heart's been aching but You're too shy to say Except we both know what's been going on We know the game and we're gonna play it I just wanna tell you how I feel Gotta make you understand Never gonna give you up Never gonna let you down Never gonna run around to desert you Never gonna make you cry Never gonna say goodbye Never gonna say goodbye and hurt you Never gonna give you up Never gonna let you down Never gonna run around to desert you Never gonna make you cry Never gonna say goodbye Never gonna say goodbye and hurt you You're never gonna give you up Never gonna let you down Never gonna run around and desert you Never gonna make you hide Never gonna say goodbye Never gonna tell you bye",
+  "transcript_length": 1795,
+  "synthesis": {
+    "raw_text": "Here is the structured response:\n\n**Core Thesis**\nThe core thesis of this song is that despite the uncertainty and risks involved, the speaker is committed to making the relationship work and is willing to do whatever it takes to maintain it.\n\n**Key Insights**\n\n* The song highlights the complexity and vulnerability of relationships, where both parties are aware of the risks but choose to play along anyway.\n* The repetition of \"never gonna\" phrases creates a sense of urgency and emphasizes the speaker's commitment to making the relationship work.\n* The lyrics suggest that the relationship is built on a foundation of mutual understanding and knowledge of each other's true feelings, rather than blind trust or avoidance of conflict.\n* The song's focus on loyalty and commitment raises questions about what relationships are truly worth fighting for.\n\n**Actionable Takeaways**\n\n* When faced with uncertainty or risk in a relationship, it may be helpful to take a step back and assess the underlying dynamics at play.\n* Prioritizing open communication and mutual understanding can help build trust and strengthen relationships.\n* Recognize that even imperfect relationships require effort and commitment from both parties to succeed.\n* Consider whether the risks involved in maintaining a relationship are worth the potential rewards, and prioritize self-care and emotional well-being accordingly.",
+    "model_used": "llama3.1:8b",
+    "template_used": "basic_summary",
+    "transcript_length": 1795,
+    "synthesis_length": 1401,
+    "use_cloud": false
+  },
+  "model_used": "llama3.1:8b",
+  "template_used": "basic_summary",
+  "processing_time": 98.369661,
+  "error": null,
+  "is_playlist": false,
+  "playlist_results": null
+}

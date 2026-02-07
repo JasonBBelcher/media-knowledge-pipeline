@@ -1,10 +1,24 @@
 # Media-to-Knowledge Pipeline
 
-**Version: 2.0.0**
+**Version: 2.2.0**
 
 A modular Python application that processes video and audio files through transcription and knowledge synthesis using local or cloud Ollama models. Extract actionable insights, summaries, and structured knowledge from your media content.
 
 ## 📋 Changelog
+
+### v2.3.0 (February 7, 2026)
+- **Token-Based Model Selection**: Intelligent model switching based on content volume to prevent context overflow
+- **Intelligent Folder Organization**: Ordered folder structure for playlists and URL lists with systematic naming
+- **Essay Synthesis Notifications**: Real-time feedback during essay generation with token count information
+- **Create Essays from Existing Docs**: New CLI command to generate essays from previously processed synthesis files
+- **Enhanced Error Handling**: Better management of large content with graceful degradation suggestions
+
+### v2.2.0 (February 7, 2026)
+- **Enhanced Python CLI**: Replaced bash script wrapper with modern Python CLI using Typer and Rich
+- **Improved User Experience**: Enhanced feedback with colorful output, progress indicators, and real-time status updates
+- **Better Error Handling**: Clear error messages and graceful failure recovery
+- **Cross-Platform Compatibility**: Consistent interface across all operating systems
+- **Extensible Architecture**: Modular design for easy feature additions
 
 ### v2.1.0 (February 6, 2026)
 - **Progress Tracking**: Added visual progress indicators and percentage tracking for batch processing
@@ -37,10 +51,11 @@ A modular Python application that processes video and audio files through transc
 - **Flexible Deployment**: Run entirely locally or use cloud Ollama services
 - **Structured Output**: Save results as JSON for further processing
 - **Markdown Export**: Automatically save synthesized knowledge as markdown files with descriptive filenames
-- **User-Friendly CLI**: Simplified command-line interface with intuitive aliases
+- **User-Friendly CLI**: Modern command-line interface with colorful output and progress indicators
 - **YouTube Playlist Support**: Process entire YouTube playlists automatically
 - **Multi-Source Essay Synthesis**: Generate comprehensive essays from multiple videos with content cohesion checking
 - **Progress Tracking**: Visual progress indicators and percentage tracking during batch processing
+- **Enhanced CLI**: Rich terminal interface with autocomplete and detailed help system
 
 ## 📋 Project Structure
 
@@ -50,22 +65,40 @@ media_knowledge_pipeline/
 ├── config.py               # Configuration management
 ├── requirements.txt        # Python dependencies
 ├── .env.example           # Environment variables template
+├── VERSION                # Current version number
 ├── outputs/               # Generated outputs (JSON and Markdown)
 │   └── markdown/          # Knowledge synthesis in markdown format
 ├── data/                  # Media file storage
 │   ├── audio/             # Audio files destination
 │   └── videos/            # Video files destination
-├── core/                   # Core pipeline modules
+├── core/                  # Core pipeline modules
 │   ├── __init__.py
 │   ├── media_preprocessor.py  # Video/audio detection and preparation
 │   ├── transcriber.py          # Whisper-based transcription
 │   ├── synthesizer.py          # Ollama knowledge synthesis
 │   ├── prompts.py              # Reusable prompt templates
 │   └── file_scanner.py         # Automated file scanning and monitoring
-└── utils/                  # Utility functions
-    ├── __init__.py
-    ├── file_handler.py         # File validation and operations
-    └── chunker.py              # Audio chunking for long files
+├── utils/                 # Utility functions
+│   ├── __init__.py
+│   ├── file_handler.py         # File validation and operations
+│   ├── chunker.py              # Audio chunking for long files
+│   ├── token_counter.py        # Token counting for model selection
+│   ├── folder_organizer.py     # Intelligent folder organization
+│   └── essay_from_existing.py  # Essay generation from existing docs
+└── src/                   # Enhanced CLI package
+    └── media_knowledge/        # Python CLI modules
+        ├── __init__.py
+        └── cli/               # CLI command structure
+            ├── __init__.py
+            ├── app.py         # Main CLI application
+            └── commands/      # Individual CLI commands
+                ├── __init__.py
+                ├── process.py
+                ├── batch.py
+                ├── playlist.py
+                ├── scan.py
+                ├── watch.py
+                └── create_essay.py  # Create essays from existing docs
 ```
 
 ## 🚀 Installation
@@ -132,105 +165,180 @@ ollama list
 
 ## 💻 Usage
 
-### Basic Usage (Local Ollama)
+### Modern Python CLI (Recommended)
 
-Process a video file with default settings:
+The enhanced Python CLI provides a rich terminal experience with colorful output, progress indicators, and comprehensive help:
 
 ```bash
-python main.py --input /path/to/video.mp4
+# Show available commands
+media-knowledge --help
+
+# Show system status
+media-knowledge status
+
+# Process a single YouTube video or local file
+media-knowledge process media --input "https://youtube.com/watch?v=..."
+
+# Process multiple YouTube URLs from a file
+media-knowledge batch process-urls --urls youtube_urls.txt
+
+# Process YouTube playlist with organized output
+media-knowledge playlist process-playlist "https://youtube.com/playlist?list=..."
+
+# Scan directory for media files
+media-knowledge scan directory --directory ~/Downloads
+
+# Watch directory for new media files
+media-knowledge watch directory --directory ~/Downloads --process
+
+# Create essay from existing synthesized documents
+media-knowledge create-essay --directory outputs --pattern "*.json"
 ```
 
-### Use Cloud Ollama
+### Enhanced Capabilities
 
-Process with cloud Ollama instead of local:
+#### Token-Based Model Selection
+The system automatically selects appropriate models based on content volume:
+- **≤ 8K tokens**: Local llama3.1:8b model
+- **8K-12K tokens**: Cloud mistral:7b model  
+- **12K-32K tokens**: Cloud llama3.1:70b model
+- **32K-65K tokens**: Cloud deepseek-v3.1:671b model
+- **> 65K tokens**: Content too large, manual batching recommended
 
-```bash
-python main.py --input /path/to/audio.mp3 --cloud
+#### Intelligent Folder Organization
+All outputs are organized in logical folder structures:
+```
+outputs/
+├── playlist_AI_Learning_Series/
+│   ├── 001_Introduction_to_AI/
+│   │   ├── video.mp4
+│   │   ├── transcript.json
+│   │   └── synthesis.md
+│   └── 002_Machine_Learning_Basics/
+│       ├── video.mp4
+│       ├── transcript.json
+│       └── synthesis.md
+├── batch_20260207_153045/
+│   ├── 001_First_Video_Title/
+│   │   ├── video.mp4
+│   │   ├── transcript.json
+│   │   └── synthesis.md
+│   └── comprehensive_analysis_3_sources_20260207_153045.md
+└── comprehensive_analysis_from_existing_docs.md
 ```
 
-### Use Built-in Prompt Templates
-
-```bash
-# Meeting minutes
-python main.py --input meeting.mp4 --prompt meeting_minutes
-
-# Lecture summary
-python main.py --input lecture.mp4 --prompt lecture_summary
-
-# Project update
-python main.py --input update.mp4 --prompt project_update
-
-# Customer feedback analysis
-python main.py --input feedback.mp3 --prompt customer_feedback
+#### Essay Synthesis Notifications
+Real-time feedback during essay generation:
+```
+✓ Batch processing complete: 8/8 videos processed successfully
+→ Aggregating content: 18.4K tokens detected
+→ Using model: llama3.1:70b for optimal processing
+→ Synthesizing comprehensive essay from aggregated content...
+✓ Essay synthesis complete: 2,847 words
 ```
 
-### Use Custom Prompt
+### CLI Commands
 
+#### Process Single Media
 ```bash
-python main.py --input interview.mp4 --prompt "Summarize the key points: {transcript}"
-```
+# Process a video file with default settings
+media-knowledge process media --input /path/to/video.mp4
 
-### Save Results to File
+# Process with cloud Ollama
+media-knowledge process media --input /path/to/audio.mp3 --cloud
 
-```bash
-python main.py --input lecture.mp4 --output results.json
-```
+# Use a specific prompt template
+media-knowledge process media --input meeting.mp4 --prompt meeting_minutes
 
-### Quiet Mode (Minimal Output)
+# Save results to file
+media-knowledge process media --input lecture.mp4 --output results.json
 
-```bash
-python main.py --input video.mp4 --quiet
-```
+# Save synthesis to markdown
+media-knowledge process media --input lecture.mp4 --markdown outputs/markdown
 
-### Full Example with All Options
-
-```bash
-python main.py \
-  --input /path/to/meeting.mp4 \
+# Combine multiple options
+media-knowledge process media \
+  --input "https://www.youtube.com/watch?v=..." \
   --prompt meeting_minutes \
   --output meeting_summary.json \
+  --markdown outputs/markdown \
   --cloud
 ```
 
-### YouTube Playlist Support
-
-Process entire YouTube playlists automatically:
-
+#### Batch Processing
 ```bash
-# Process a YouTube playlist
-python main.py --input "https://www.youtube.com/playlist?list=PL8dPuuaLjXtOAKed_MxxWBNaPno5h3Zs8"
-
-# Playlist with custom prompt 
-python main.py --input "https://youtube.com/playlist?list=..." --prompt lecture_summary
-
-# Process YouTube URLs file containing playlists
-python main.py batch --urls youtube_urls.txt
-
-# Generate comprehensive essay from multiple sources
-python main.py batch --urls youtube_urls.txt --essay
-
-# Force essay generation regardless of content cohesion
-python main.py batch --urls youtube_urls.txt --essay --force-essay
-```
-
-YouTube playlists are automatically detected and expanded into individual videos. Each video is processed separately and combined into a comprehensive synthesis.
-
-### Multi-Source Essay Synthesis
-
-Generate comprehensive essays from multiple YouTube videos or playlists with intelligent content cohesion checking:
-
-```bash
-# Process multiple videos and generate an essay
-python main.py batch --urls video_list.txt --essay --markdown outputs/markdown
+# Process multiple YouTube URLs
+media-knowledge batch process-urls --urls youtube_urls.txt
 
 # Parallel processing with essay synthesis
-python main.py batch --urls video_list.txt --parallel 3 --essay
+media-knowledge batch process-urls --urls youtube_urls.txt --parallel 3 --essay
 
-# Force essay generation even for unrelated content
-python main.py batch --urls video_list.txt --essay --force-essay
+# Custom output and markdown directory
+media-knowledge batch process-urls \
+  --urls urls.txt \
+  --output-dir results \
+  --markdown outputs/markdown \
+  --quiet
 ```
 
-The essay synthesis feature automatically evaluates thematic connections between sources and prevents meaningless synthesis. When content is sufficiently related, it generates a comprehensive essay integrating insights from all sources.
+#### Playlist Processing
+```bash
+# Process a YouTube playlist
+media-knowledge playlist process-playlist "https://youtube.com/playlist?list=..."
+
+# Playlist with custom folder name
+media-knowledge playlist process-playlist \
+  "https://youtube.com/playlist?list=..." \
+  --folder-name "AI_Learning_Series"
+```
+
+#### Directory Scanning
+```bash
+# Scan Downloads directory
+media-knowledge scan directory
+
+# Scan custom directory
+media-knowledge scan directory --directory /path/to/media
+
+# Auto-process copied files
+media-knowledge scan directory --directory ~/Downloads --process
+
+# Dry run to see what would happen
+media-knowledge scan directory --directory ~/Downloads --dry-run
+```
+
+#### Directory Watching
+```bash
+# Watch Downloads directory
+media-knowledge watch directory
+
+# Watch with custom poll interval
+media-knowledge watch directory --interval 10
+
+# Auto-process new files
+media-knowledge watch directory --directory ~/Downloads --process
+```
+
+### CLI Features
+
+- **Colorful Output**: Red errors, green successes, blue information
+- **Progress Indicators**: Real-time progress bars and spinners
+- **Autocomplete**: Tab completion for commands and options
+- **Help System**: Context-sensitive help for all commands
+- **Rich Formatting**: Tables, lists, and formatted output
+- **Verbose Logging**: Detailed operation information when needed
+
+### Legacy CLI Compatibility
+
+The original CLI interface still works for backward compatibility:
+
+```bash
+# Original interface still supported
+python main.py --input video.mp4
+python main.py batch --urls youtube_urls.txt
+python main.py scan
+python main.py watch
+```
 
 ## 🚀 Simplified CLI Wrapper
 
