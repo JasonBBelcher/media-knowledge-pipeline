@@ -224,6 +224,16 @@ python -c "import fitz; print('PyMuPDF OK'); import ebooklib; print('ebooklib OK
 
 The enhanced Python CLI provides a rich terminal experience with colorful output, progress indicators, and comprehensive help:
 
+**Before using any CLI commands, activate the virtual environment:**
+```bash
+# Navigate to project directory
+cd /Users/jasonbelcher/Documents/code/media-knowledge-pipeline
+
+# Activate the virtual environment (required for CLI commands)
+source media_knowledge_env/bin/activate
+```
+
+**Then you can use all CLI commands:**
 ```bash
 # Show available commands
 media-knowledge --help
@@ -248,6 +258,16 @@ media-knowledge watch directory --directory ~/Downloads --process
 
 # Create essay from existing synthesized documents
 media-knowledge create-essay --directory outputs --pattern "*.json"
+
+# Process documents (after activating virtual environment)
+media-knowledge document formats
+media-knowledge document process document.pdf
+media-knowledge document batch /path/to/documents/ --pattern "*.pdf"
+```
+
+**Don't forget to deactivate the virtual environment when done:**
+```bash
+deactivate
 ```
 
 ### Enhanced Capabilities
@@ -401,6 +421,15 @@ media-knowledge watch directory --directory ~/Downloads --process
 
 Process knowledge from PDF, EPUB, and MOBI documents with the same powerful synthesis capabilities:
 
+**Before using document commands, activate the virtual environment:**
+```bash
+# Navigate to project directory
+cd /Users/jasonbelcher/Documents/code/media-knowledge-pipeline
+
+# Activate the virtual environment (required for CLI commands)
+source media_knowledge_env/bin/activate
+```
+
 ### Process Single Documents
 ```bash
 # Process a PDF document
@@ -421,6 +450,8 @@ media-knowledge document process book.pdf \
   --output book_summary.json \
   --cloud
 ```
+
+**All document processing commands require the virtual environment to be activated as shown above.**
 
 ### Batch Document Processing
 ```bash
@@ -445,6 +476,11 @@ media-knowledge document batch ./papers/ \
 ```bash
 # Show all supported document formats
 media-knowledge document formats
+```
+
+**Don't forget to deactivate the virtual environment when you're done:**
+```bash
+deactivate
 ```
 
 ### Document Processing Features
