@@ -12,7 +12,7 @@ long_description = readme_path.read_text(encoding="utf-8") if readme_path.exists
 
 setup(
     name="media-knowledge-pipeline",
-    version="2.2.0",
+    version="2.4.0",
     description="Extract and synthesize knowledge from video/audio content",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -44,6 +44,7 @@ setup(
     entry_points={
         "console_scripts": [
             "media-knowledge=media_knowledge.cli.app:app",
+            "media-knowledge-launch=media_knowledge.cli.launcher:main",
         ],
     },
     classifiers=[
