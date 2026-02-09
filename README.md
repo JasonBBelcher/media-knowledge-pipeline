@@ -20,6 +20,7 @@ This repository is a Knowledge Assimilation Engine. It bypasses the noise of the
 - **Git Exclusion**: Properly configured `.gitignore` to exclude output files from version control while preserving directory structure with `.keep` files
 - **Large Document Processing**: Added intelligent chunking processor for handling very large documents that exceed model context limits
 - **File Organization**: Moved `large_document_processor.py` to proper `core/` directory location with corrected import paths
+- **Anki Integration**: Added new `anki` CLI command to generate flashcards from synthesis output with automatic card type classification and Anki deck generation
 
 ### v2.4.0 (February 7, 2026)
 - **Document Processing Support**: Added ability to read and synthesize knowledge from PDF, EPUB, and MOBI files using specialized document readers
@@ -77,6 +78,33 @@ This repository is a Knowledge Assimilation Engine. It bypasses the noise of the
 - **Multi-Source Essay Synthesis**: Generate comprehensive essays from multiple sources with content cohesion checking
 - **File Automation**: Automated scanning and monitoring of directories with smart file organization
 - **Cross-Platform Support**: Works seamlessly on macOS, Linux, and Windows systems
+- **Anki Flashcard Generation**: Transform synthesis output into importable Anki decks with multiple flashcard types and automatic classification
+
+## 📚 Anki Integration
+
+The Media Knowledge Pipeline now includes built-in support for generating Anki flashcards from your synthesized content. Using the new `anki` CLI command, you can transform any synthesis output into structured flashcards ready for spaced repetition learning.
+
+### Supported Flashcard Types
+
+- **Concept Definitions**: Terms and their explanations
+- **Q&A Pairs**: Questions with detailed answers
+- **Historical Events**: Dates, events, and their significance
+- **Process Steps**: Sequential procedures and workflows
+
+### Usage Examples
+
+```bash
+# Generate flashcards from synthesis output
+media-knowledge anki generate --input synthesis.json --output flashcards.apkg
+
+# Preview what flashcards would be generated
+media-knowledge anki preview --input synthesis.json
+
+# View available flashcard templates
+media-knowledge anki templates
+```
+
+The Anki integration uses intelligent content classification to automatically determine the most appropriate flashcard type for each piece of knowledge, ensuring optimal learning effectiveness.
 
 ## 📋 Project Structure
 

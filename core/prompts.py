@@ -154,6 +154,33 @@ Provide:
 4. Root Cause Analysis (if discussed)
 5. Proposed Solutions or Workarounds"""
     
+    # Anki Integration Templates
+    ANKI_FLASHCARDS = """You are a knowledge extraction assistant optimized for creating educational flashcards.
+
+Analyze the provided text and extract ALL key learnings suitable for spaced repetition flashcards.
+
+For EACH learning point:
+1. CATEGORIZE it as exactly one of:
+   - concept_definition: For terms, concepts, definitions
+   - q_a_pair: For questions and answers, problem/solution
+   - event_date: For historical events, milestones, dates
+   - step_in_process: For procedural steps, sequences, workflows
+
+2. STRUCTURE the output with these REQUIRED fields based on type:
+   - concept_definition: concept, definition, context (optional), examples (optional)
+   - q_a_pair: question, answer, explanation (optional), source_timestamp (if media)
+   - event_date: event, date, significance, key_figures (optional)
+   - step_in_process: process, step_number, step, detail
+
+3. Assign relevant TAGS (2-4 keywords) for organization.
+4. Set PRIORITY (high/medium/low) based on importance.
+
+Return ONLY valid JSON with flashcard content array. Example structure would contain objects with type and tags fields.
+
+Transcript:
+{transcript}
+"""
+
     # Utility template for generating descriptive filenames
     FILENAME_SUBJECT = """Based on the synthesized content below, provide a short, descriptive subject line that would be suitable as a filename (3-5 words maximum). Focus on the core topic or main concept discussed:
 
@@ -224,6 +251,9 @@ PROMPT_TEMPLATES: Dict[str, str] = {
     # Technical templates
     "technical_documentation": PromptTemplates.TECHNICAL_DOCUMENTATION,
     "bug_report_summary": PromptTemplates.BUG_REPORT_SUMMARY,
+    
+    # Anki integration templates
+    "anki_flashcards": PromptTemplates.ANKI_FLASHCARDS,
     
     # Multi-source synthesis templates
     "synthesis_essay": PromptTemplates.SYNTHESIS_ESSAY,

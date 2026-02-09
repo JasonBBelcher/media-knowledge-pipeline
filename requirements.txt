@@ -33,3 +33,7 @@ mobi>=0.4.0
 # Testing
 pytest>=7.4.0
 pytest-mock>=3.11.0
+
+# Anki Integration
+genanki>=0.13.0
+jsonschema>=4.0.0
