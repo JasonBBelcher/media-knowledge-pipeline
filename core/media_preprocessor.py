@@ -27,7 +27,7 @@ except ImportError:
 
 # Import timeout manager for safer subprocess handling
 try:
-    from utils.timeout_manager import run_ffmpeg_with_timeout, ProcessTimeoutError
+    from utils.timeout_manager import ProcessTimeoutError
     TIMEOUT_MANAGER_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
     TIMEOUT_MANAGER_AVAILABLE = False
@@ -248,42 +248,37 @@ def stream_youtube_audio(youtube_url: str, output_dir: str) -> str:
         # Ensure output directory exists
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         
-        # Stream directly from YouTube to WAV using ffmpeg
-        # Use the direct URL that yt-dlp provided
-        ffmpeg_cmd = [
-            "ffmpeg",
-            "-i", direct_url,   # Input from direct stream URL
-            "-vn",              # No video
-            "-acodec", "pcm_s16le",  # WAV codec
-            "-ar", "16000",     # 16kHz sample rate (good for Whisper)
-            "-ac", "1",         # Mono
-            "-y",               # Overwrite output file
-            str(output_path)
-        ]
+        # Use yt-dlp to download audio directly (more efficient than streaming via ffmpeg)
+        # This avoids ffmpeg timing out on long downloads
+        ydl_download_opts: Dict[str, Any] = {
+            'format': 'bestaudio/best',
+            'outtmpl': str(output_path).replace('.wav', '.%(ext)s'),
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'wav',
+                'preferredquality': '192',
+            }],
+            'postprocessor_args': [
+                '-ar', '16000',  # Sample rate
+                '-ac', '1',      # Mono
+                '-acodec', 'pcm_s16le'  # PCM codec
+            ],
+        }
         
-        print("Streaming and converting audio...")
-        if TIMEOUT_MANAGER_AVAILABLE:
-            try:
-                result = run_ffmpeg_with_timeout(ffmpeg_cmd, timeout=600, verbose=True)
-                if result['returncode'] != 0:
-                    raise YouTubeStreamingError(
-                        f"Failed to stream YouTube audio: {result['stderr']}"
-                    )
-            except subprocess.CalledProcessError as e:
-                # Handle legitimate ffmpeg processing errors
-                raise YouTubeStreamingError(
-                    f"Failed to stream YouTube audio: {e.stderr or str(e)}"
-                )
-            except Exception as e:
-                # Handle timeout and other exceptions
-                if "timeout" in str(e).lower():
-                    raise YouTubeStreamingError(
-                        f"Timeout while streaming YouTube audio (600s limit exceeded)"
-                    )
-                else:
-                    raise YouTubeStreamingError(
-                        f"Failed to stream YouTube audio: {str(e)}"
-                    )
+        print("Downloading audio directly using yt-dlp...")
+        try:
+            with yt_dlp.YoutubeDL(ydl_download_opts) as ydl:
+                ydl.download([youtube_url])
+                
+            # Verify the file was created
+            if output_path.exists():
+                print("✓ Audio downloaded successfully")
+                return str(output_path)
+            else:
+                raise YouTubeStreamingError("Audio file was not created after download")
+                
+        except Exception as e:
+            raise YouTubeStreamingError(f"Failed to download YouTube audio: {str(e)}")
         else:
             # Fallback to original method if timeout manager not available
             result = subprocess.run(
@@ -418,33 +413,14 @@ def extract_audio_from_video(video_path: str, output_dir: str) -> str:
             str(output_path)
         ]
         
-        if TIMEOUT_MANAGER_AVAILABLE:
-            try:
-                result = run_ffmpeg_with_timeout(cmd, timeout=300, verbose=True)
-                return str(output_path)
-            except subprocess.CalledProcessError as e:
-                # Handle legitimate ffmpeg processing errors
-                raise MediaPreprocessorError(
-                    f"Failed to extract audio from video: {e.stderr or str(e)}"
-                )
-            except Exception as e:
-                # Handle timeout and other exceptions
-                if "timeout" in str(e).lower():
-                    raise MediaPreprocessorError(
-                        f"Timeout while extracting audio from video (300s limit exceeded)"
-                    )
-                else:
-                    raise MediaPreprocessorError(
-                        f"Failed to extract audio from video: {str(e)}"
-                    )
-        else:
-            # Fallback to original method
-            subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=True
-            )
+        # Run ffmpeg with standard timeout handling
+        subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=300  # 5 minute timeout for local file processing
+        )
         
         return str(output_path)
         
@@ -499,33 +475,14 @@ def convert_audio_to_wav(audio_path: str, output_dir: str) -> str:
             str(output_path)
         ]
         
-        if TIMEOUT_MANAGER_AVAILABLE:
-            try:
-                result = run_ffmpeg_with_timeout(cmd, timeout=120, verbose=True)
-                return str(output_path)
-            except subprocess.CalledProcessError as e:
-                # Handle legitimate ffmpeg processing errors
-                raise MediaPreprocessorError(
-                    f"Failed to convert audio to WAV: {e.stderr or str(e)}"
-                )
-            except Exception as e:
-                # Handle timeout and other exceptions
-                if "timeout" in str(e).lower():
-                    raise MediaPreprocessorError(
-                        f"Timeout while converting audio to WAV (120s limit exceeded)"
-                    )
-                else:
-                    raise MediaPreprocessorError(
-                        f"Failed to convert audio to WAV: {str(e)}"
-                    )
-        else:
-            # Fallback to original method
-            subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=True
-            )
+        # Run ffmpeg with timeout
+        subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=120  # 2 minute timeout for audio conversion
+        )
         
         return str(output_path)
         

@@ -289,14 +289,10 @@ class MediaWizard:
         quiet_choice = input("Run in quiet mode? (Less verbose output) [y/N]: ").strip().lower()
         quiet_mode = quiet_choice in ['y', 'yes']
         
-        # Organize output option
-        organize_choice = input("Organize output in folders? [Y/n]: ").strip().lower()
-        organize_mode = organize_choice not in ['n', 'no']
-        
         return {
             "use_cloud": use_cloud,
             "quiet": quiet_mode,
-            "organize": organize_mode
+            "organize": True  # Always organize by default
         }
     
     def confirm_and_execute(self, media_input, media_type, template, output_config, processing_options, custom_prompt=None):
