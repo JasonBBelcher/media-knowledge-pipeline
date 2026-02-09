@@ -1,15 +1,30 @@
-# Media-to-Knowledge Pipeline
+<pre align="center">
+  __  __           _     _    _                 
+ |  \/  |         (_)   | |  | |                
+ | \  / | __ _ ___ _  __| |  | | _____  _____   
+ | |\/| |/ _` / __| |/ _` |  | |/ _ \ \/ / _ \  
+ | |  | | (_| \__ \ | (_| |  | |  __/>  <  __/  
+ |_|  |_|\__,_|___/_|\__,_|  |_|\___/_/\_\___|  
+                                               
+                                               </pre>
 
-**Version: 2.5.0**
+<h1 align="center">Media-to-Knowledge Pipeline</h1>
 
-## The Neural Distillation Protocol
-Directive 80/20: In a universe of infinite data streams, true power lies not in consumption, but in strategic extraction.
+<p align="center">
+  <strong>Version 2.5.0</strong>
+</p>
+
+<br />
+
+## 🧠 The Neural Distillation Protocol
+
+**Directive 80/20**: In a universe of infinite data streams, true power lies not in consumption, but in strategic extraction.
 
 Human cognition operates in two primary modes:
 
-Recreational Processing: Passive absorption for neural coherence maintenance.
+**Recreational Processing**: Passive absorption for neural coherence maintenance.
 
-Tactical Acquisition: Active mining of high-value payloads for world-state manipulation.
+**Tactical Acquisition**: Active mining of high-value payloads for world-state manipulation.
 
 This repository is a Knowledge Assimilation Engine. It bypasses the noise of the datasphere to isolate the critical 20% of informational mass that yields 80% of actionable insight. It transforms raw media and documents into structured intelligence, ready for deployment.
 
@@ -50,26 +65,6 @@ This repository is a Knowledge Assimilation Engine. It bypasses the noise of the
 - **Better Error Handling**: Clear error messages and graceful failure recovery
 - **Cross-Platform Compatibility**: Consistent interface across all operating systems
 - **Extensible Architecture**: Modular design for easy feature additions
-
-### v2.1.0 (February 6, 2026)
-- **Progress Tracking**: Added visual progress indicators and percentage tracking for batch processing
-- **Enhanced Feedback**: Real-time status updates showing current processing phase and ETA
-- **Improved User Experience**: Better visibility into processing pipeline with detailed progress information
-
-### v2.0.0 (February 6, 2026)
-- **Multi-Source Essay Synthesis**: Generate comprehensive essays from multiple YouTube videos or playlists with content cohesion checking
-- **Batch Processing Enhancements**: Added `--essay` and `--force-essay` flags to batch command for automatic essay generation
-- **Content Cohesion Assessment**: Smart evaluation to prevent meaningless synthesis by checking thematic connections between sources
-- **Graceful Degradation**: Automatically retains individual synthesized knowledge when essay synthesis is not appropriate
-- **New Prompt Templates**: Added synthesis_essay and content_cohesion_check templates for advanced knowledge synthesis
-
-### v1.1.0 (February 5, 2026)
-- **Test Suite Improvements**: Fixed 29 failing tests, improved coverage from 82% to 99.6%
-- **File Scanner Feature**: Added automated file scanning and monitoring capabilities
-- **Enhanced Error Handling**: Improved exception handling and error messages
-- **Code Quality**: Fixed function parameter mismatches and added missing exception classes
-- **Documentation**: Added comprehensive file scanner documentation
-- **Performance**: Optimized test execution and mocking
 
 ## 🎯 Capabilities
 
@@ -134,20 +129,13 @@ media_knowledge_pipeline/
 │   ├── synthesizer.py          # Ollama knowledge synthesis
 │   ├── prompts.py              # Reusable prompt templates
 │   ├── file_scanner.py         # Automated file scanning and monitoring
-│   └── document_readers/       # Document format readers
-│       ├── __init__.py
-│       ├── base.py             # Base reader class and factory
-│       ├── pdf_reader.py       # PDF text extraction
-│       ├── epub_reader.py      # EPUB content extraction
-│       └── mobi_reader.py      # MOBI document processing
-├── core/                  # Core pipeline modules
-│   ├── __init__.py
-│   ├── media_preprocessor.py  # Video/audio detection and preparation
-│   ├── transcriber.py          # Whisper-based transcription
-│   ├── synthesizer.py          # Ollama knowledge synthesis
-│   ├── prompts.py              # Reusable prompt templates
-│   ├── file_scanner.py         # Automated file scanning and monitoring
 │   ├── document_processor.py    # Document processing integration
+│   ├── anki_generator.py       # Anki deck generation engine
+│   ├── output_adapters/        # Output transformation framework
+│   │   ├── __init__.py
+│   │   ├── base_adapter.py
+│   │   ├── anki_adapter.py
+│   │   └── anki_schema.py
 │   └── document_readers/       # Document format readers
 │       ├── __init__.py
 │       ├── base.py             # Base reader class and factory
@@ -175,6 +163,7 @@ media_knowledge_pipeline/
                 ├── scan.py
                 ├── watch.py
                 ├── document.py      # Document processing commands
+                ├── anki.py          # Anki flashcard generation commands
                 └── create_essay.py  # Create essays from existing docs
 ```
 
@@ -223,7 +212,15 @@ brew install pkg-config
 sudo apt-get install libcairo2-dev gir1.2-poppler-0.18
 ```
 
-### Step 6: Install Ollama (for Local Processing)
+### Step 4: Anki Integration Dependencies
+
+For Anki flashcard generation:
+
+```bash
+pip install genanki jsonschema
+```
+
+### Step 5: Install Ollama (for Local Processing)
 
 ```bash
 # macOS/Linux
@@ -233,7 +230,7 @@ curl -fsSL https://ollama.ai/install.sh | sh
 ollama pull llama3.1:8b
 ```
 
-### Step 4: Configure Environment
+### Step 6: Configure Environment
 
 ```bash
 # Copy the example environment file
@@ -243,7 +240,7 @@ cp .env.example .env
 nano .env  # or use your preferred editor
 ```
 
-### Step 8: Verify Installation
+### Step 7: Verify Installation
 
 ```bash
 # Check Python version
@@ -257,6 +254,9 @@ ollama list
 
 # Check document processing libraries
 python -c "import fitz; print('PyMuPDF OK'); import ebooklib; print('ebooklib OK'); import mobi; print('mobi OK')"
+
+# Check Anki integration libraries
+python -c "import genanki; print('genanki OK'); import jsonschema; print('jsonschema OK')"
 ```
 
 ## 💻 Usage
@@ -304,6 +304,11 @@ media-knowledge create-essay --directory outputs --pattern "*.json"
 media-knowledge document formats
 media-knowledge document process document.pdf
 media-knowledge document batch /path/to/documents/ --pattern "*.pdf"
+
+# Generate Anki flashcards from synthesis output
+media-knowledge anki generate --input synthesis.json --output flashcards.apkg
+media-knowledge anki preview --input synthesis.json
+media-knowledge anki templates
 ```
 
 **Don't forget to deactivate the virtual environment when done:**
@@ -340,7 +345,9 @@ outputs/
 │   │   ├── transcript.json
 │   │   └── synthesis.md
 │   └── comprehensive_analysis_3_sources_20260207_153045.md
-└── comprehensive_analysis_from_existing_docs.md
+├── comprehensive_analysis_from_existing_docs.md
+└── flashcards/
+    └── my_lecture_anki.apkg
 ```
 
 #### Essay Synthesis Notifications
@@ -433,6 +440,21 @@ media-knowledge watch directory --interval 10
 
 # Auto-process new files
 media-knowledge watch directory --directory ~/Downloads --process
+```
+
+#### Anki Flashcard Generation
+```bash
+# Generate flashcards from synthesis output
+media-knowledge anki generate --input synthesis.json --output flashcards.apkg
+
+# Generate with custom deck name
+media-knowledge anki generate --input synthesis.json --deck-name "My Study Deck"
+
+# Preview flashcards without generating file
+media-knowledge anki preview --input synthesis.json
+
+# View available flashcard template information
+media-knowledge anki templates
 ```
 
 ### CLI Features
@@ -624,6 +646,7 @@ These prompt templates work for extracting knowledge from both media (video/audi
 | `social_media_content` | Engaging posts for social platforms |
 | `technical_documentation` | Clear technical explanations |
 | `bug_report_summary` | Issue description, reproduction, and solutions |
+| `anki_flashcards` | Generate structured flashcards for Anki |
 
 All templates accept text content extracted from either:
 - Media transcripts (video/audio processed through Whisper)
@@ -655,6 +678,12 @@ MKD_DOWNLOAD_DIR=~/Downloads
 MKD_SCAN_INTERVAL=5
 MKD_AUTO_PROCESS=false
 MKD_SKIP_EXISTING=true
+
+# Anki Integration Settings
+ANKI_DEFAULT_DECK_NAME=Media_Knowledge_Deck
+ANKI_CSS_TEMPLATE=default
+ANKI_AUTO_TAG_SOURCE=true
+ANKI_INCLUDE_TIMESTAMPS=true
 ```
 
 ### Whisper Model Sizes
@@ -720,6 +749,7 @@ Recommended models for knowledge synthesis:
     │ -Ollama local │
     │ -Ollama cloud │
     │ -Prompt templates│
+    │ -Anki adapter │
     └──────┬────────┘
            │
            ▼
@@ -728,6 +758,7 @@ Recommended models for knowledge synthesis:
     │  - Console    │
     │  - JSON file  │
     │  - Markdown   │
+    │  - Anki Deck  │
     └───────────────┘
 ```
 
@@ -769,40 +800,46 @@ python -c "import fitz; import ebooklib; import mobi; print('All document librar
 - Check file permissions
 - Try processing a different document file
 
-#### 3. "Whisper model not found"
+#### 5. "Whisper model not found"
 **Solution:** The model will download automatically on first run. Ensure you have internet connection and sufficient disk space.
 
-#### 4. "Out of memory" during transcription
+#### 6. "Out of memory" during transcription
 **Solution:** Use a smaller Whisper model:
 ```bash
 # In .env file
 WHISPER_MODEL_SIZE=tiny  # or base
 ```
 
-#### 5. "Long file processing is slow"
+#### 7. "Long file processing is slow"
 **Solution:** This is expected for files >25 minutes. The system automatically chunks them. Consider using a smaller model for faster processing.
 
-#### 6. "Cloud Ollama authentication failed"
+#### 8. "Cloud Ollama authentication failed"
 **Solution:** Verify your API key and endpoint URL in `.env`. Note: The cloud endpoint is a placeholder and may need verification from official Ollama Cloud documentation.
 
-#### 7. "Module not found" errors
+#### 9. "Module not found" errors
 **Solution:** Ensure all dependencies are installed:
 ```bash
 pip install -r requirements.txt
 ```
 
-#### 8. "Files not being processed after copying"
+#### 10. "Files not being processed after copying"
 **Solution:** Use the `--process` flag to enable auto-processing:
 ```bash
 python main.py scan --process
 python main.py watch --process
 ```
 
-#### 9. "Zero-byte files being skipped"
+#### 11. "Zero-byte files being skipped"
 **Solution:** This is intentional - the system skips incomplete downloads. Wait for files to finish downloading before processing.
 
-#### 10. "Watch mode not detecting new files"
+#### 12. "Watch mode not detecting new files"
 **Solution:** Ensure files have completed downloading and are not zero bytes. Use `--interval` to adjust polling frequency.
+
+#### 13. "Anki generation failed"
+**Solution:** Ensure genanki is installed and synthesis JSON contains proper structure:
+```bash
+pip install genanki jsonschema
+```
 
 ### Debug Mode
 
@@ -827,6 +864,7 @@ Started at: 2026-02-04 14:30:00
 🎬 Type: Video
 📝 Transcript: [First 500 characters...]
 🧠 Synthesis: [Full synthesis result...]
+📚 Anki: Generated 12 flashcards
 
 ✓ Pipeline completed successfully!
 Total processing time: 45.23 seconds
@@ -856,6 +894,7 @@ Total processing time: 45.23 seconds
 - **Cloud Processing**: When using `--cloud`, your transcript or document text is sent to the cloud endpoint
 - **Temporary Files**: Audio files are stored in `temp/` directory and can be deleted after processing
 - **Document Privacy**: Document processing extracts text locally - sensitive documents remain on your machine unless using cloud processing
+- **Anki Files**: Generated .apkg files contain only processed knowledge content
 
 ## 📚 Advanced Usage
 
@@ -887,6 +926,7 @@ The JSON output can be easily integrated with:
 - Obsidian plugins
 - Database systems
 - Web applications
+- Anki via direct import
 
 ## 📖 Documentation
 
@@ -903,6 +943,7 @@ Contributions are welcome! Areas for improvement:
 - Web interface
 - Real-time processing
 - Multi-language support
+- More output adapters (Notion, Obsidian, etc.)
 
 ## 📄 License
 
@@ -913,6 +954,7 @@ MIT License - feel free to use this project for personal or commercial purposes.
 - [OpenAI Whisper](https://github.com/openai/whisper) for speech-to-text
 - [Ollama](https://ollama.ai) for local LLM inference
 - [ffmpeg](https://ffmpeg.org) for media processing
+- [genanki](https://github.com/kerrickstaley/genanki) for Anki deck generation
 
 ## 📞 Support
 
