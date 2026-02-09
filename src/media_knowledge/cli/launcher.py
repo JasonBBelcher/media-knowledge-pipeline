@@ -40,19 +40,7 @@ def main():
     print("Welcome to Media Knowledge Pipeline!")
     print()
     
-    # Check if virtual environment is activated
-    if not os.environ.get('VIRTUAL_ENV'):
-        print("⚠️  WARNING: Virtual environment not activated!")
-        print("   For best results, activate the virtual environment first:")
-        print("   $ source venv/bin/activate")
-        print("   Or if using media_knowledge_env:")
-        print("   $ source media_knowledge_env/bin/activate")
-        print()
-        response = input("Continue anyway? (y/N): ").strip().lower()
-        if response not in ['y', 'yes']:
-            print("Exiting...")
-            return
-    
+    # Skip environment check since it's already done by the shell script
     print("🚀 Launching Media Knowledge Pipeline Interactive Frontend...")
     print()
     
@@ -63,10 +51,6 @@ def main():
     except ImportError as e:
         print(f"Error importing interactive frontend: {e}")
         print("Please ensure all dependencies are installed.")
-
-
-if __name__ == "__main__":
-    main()
 
 
 if __name__ == "__main__":
