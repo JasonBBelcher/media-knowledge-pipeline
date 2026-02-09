@@ -26,11 +26,13 @@ wheels/
 # Virtual Environment
 .venv
 venv/
+venv*
 env/
 ENV/
 .env/lib/
 .env/include/
 .env/bin/
+media_knowledge_env/
 
 # Environment Variables
 .env
@@ -64,6 +66,13 @@ results/
 data/*/*
 !data/*/.keep
 
+# Outputs Directory (keep structure but not generated files)
+outputs/*
+!outputs/markdown/*
+!outputs/anki/*
+!outputs/.keep
+!outputs/anki/.keep
+
 # Cache and Temporary Files
 .pytest_cache/
 .coverage
@@ -71,6 +80,7 @@ tmp/
 temp/
 .tmp/
 .temp/
+pytest.ini
 
 # Log Files
 *.log
