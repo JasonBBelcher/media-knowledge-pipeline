@@ -353,12 +353,18 @@ class KnowledgeSynthesizer:
             ...     print("Connection successful!")
         """
         try:
-            if self.use_cloud:
-                # For cloud, we can't easily test without making a real request
-                # Just check if we have an API key
-                return bool(self.api_key)
+            # Test connection by making a simple API call
+            if "localhost" in self.base_url:
+                # For local Ollama, test API endpoint
+                endpoint = f"{self.base_url}/api/tags"
+                response = requests.get(endpoint, timeout=10)
+                response.raise_for_status()
+                return True
+            elif self.api_key:
+                # For actual cloud, verify we have API key
+                return True
             else:
-                # For local, check if Ollama is running
+                # Both local and cloud should attempt connection
                 endpoint = f"{self.base_url}/api/tags"
                 response = requests.get(endpoint, timeout=10)
                 response.raise_for_status()
