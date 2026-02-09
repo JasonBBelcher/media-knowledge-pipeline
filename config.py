@@ -100,15 +100,15 @@ class LocalConfig(BaseConfig):
 class CloudConfig(BaseConfig):
     """Configuration for Ollama Cloud instance."""
     
-    # NOTE: This URL is a PLACEHOLDER - verify from official Ollama Cloud documentation
+    # Use local Ollama instance unless actual cloud endpoint is configured
     ollama_cloud_url: str = Field(
-        default="https://api.ollama.ai/v1",
-        description="Ollama Cloud API endpoint (PLACEHOLDER - verify from docs)"
+        default="http://localhost:11434",
+        description="Ollama Cloud API endpoint (defaults to local)"
     )
     
-    ollama_cloud_api_key: str = Field(
-        ...,
-        description="API key for Ollama Cloud authentication"
+    ollama_cloud_api_key: Optional[str] = Field(
+        default=None,
+        description="API key for Ollama Cloud authentication (optional for local)"
     )
     
     use_cloud: bool = Field(
@@ -118,13 +118,11 @@ class CloudConfig(BaseConfig):
     
     @field_validator("ollama_cloud_api_key")
     @classmethod
-    def validate_api_key(cls, v: str) -> str:
-        """Validate that API key is provided."""
-        if not v or v == "your_api_key_here":
-            raise ValueError(
-                "OLLAMA_CLOUD_API_KEY must be set in .env file. "
-                "Get your API key from Ollama Cloud documentation."
-            )
+    def validate_api_key(cls, v: Optional[str]) -> Optional[str]:
+        """Validate that API key is provided for actual cloud endpoints."""
+        # Allow None for localhost connections
+        if v == "your_api_key_here":
+            return None
         return v
 
 

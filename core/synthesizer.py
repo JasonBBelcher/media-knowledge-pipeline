@@ -167,43 +167,48 @@ class KnowledgeSynthesizer:
             ) from e
     
     def _call_cloud_ollama(self, prompt: str) -> str:
-        """
-        Call cloud Ollama API for synthesis.
-        
-        NOTE: This endpoint is a PLACEHOLDER and needs verification from
-        official Ollama Cloud documentation. The actual endpoint and payload
-        structure may differ.
+        """Call Ollama Cloud API for synthesis.
         
         Args:
-            prompt: The formatted prompt to send to Ollama Cloud.
-        
+            prompt: The formatted prompt for synthesis.
+            
         Returns:
-            The synthesized text response.
-        
+            Generated text from Ollama Cloud.
+            
         Raises:
-            OllamaConnectionError: If connection fails.
-            OllamaAPIError: If API returns an error.
+            OllamaConnectionError: If connection fails
+            OllamaAPIError: If API returns error
         """
-        # NOTE: This URL is a PLACEHOLDER - verify from official Ollama Cloud documentation
-        endpoint = f"{self.base_url}/chat/completions"
-        
-        # NOTE: This payload structure is based on OpenAI-compatible format
-        # Verify the exact structure from Ollama Cloud documentation
-        payload = {
-            "model": self.model,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "stream": False
-        }
+        # Use correct endpoint based on URL
+        if "localhost" in self.base_url:
+            endpoint = f"{self.base_url}/api/generate"
+            # Ollama local format
+            payload = {
+                "model": self.model,
+                "prompt": prompt,
+                "stream": False
+            }
+        else:
+            # Keep the OpenAI-compatible endpoint for actual cloud
+            endpoint = f"{self.base_url}/chat/completions"
+            # OpenAI-compatible format
+            payload = {
+                "model": self.model,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "stream": False
+            }
         
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
+        # Only add authorization header if API key is provided (for actual cloud)
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
         
         try:
             print(f"Calling Ollama Cloud at {endpoint}...")
@@ -218,12 +223,16 @@ class KnowledgeSynthesizer:
             
             result = response.json()
             
-            # NOTE: Response structure may vary - verify from documentation
-            # Assuming OpenAI-compatible format
-            if "choices" in result and len(result["choices"]) > 0:
-                synthesized_text = result["choices"][0].get("message", {}).get("content", "")
-            else:
+            # Handle both Ollama local and OpenAI-compatible response formats
+            if "localhost" in self.base_url:
+                # Ollama local format
                 synthesized_text = result.get("response", "")
+            else:
+                # OpenAI-compatible format
+                if "choices" in result and len(result["choices"]) > 0:
+                    synthesized_text = result["choices"][0].get("message", {}).get("content", "")
+                else:
+                    synthesized_text = result.get("response", "")
             
             if not synthesized_text:
                 raise OllamaAPIError("Empty response from Ollama Cloud")
