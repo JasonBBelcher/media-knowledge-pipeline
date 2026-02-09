@@ -17,7 +17,7 @@ class CommandExecutor:
     
     def __init__(self):
         """Initialize command executor."""
-        self.base_command = [sys.executable, "-m", "media_knowledge"]
+        self.base_command = [sys.executable, "-m", "src.media_knowledge.cli.app"]
     
     def execute_media_processing(self, config):
         """Execute media processing based on configuration.
