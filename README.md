@@ -15,6 +15,12 @@ This repository is a Knowledge Assimilation Engine. It bypasses the noise of the
 
 ## 📋 Changelog
 
+### v2.4.1 (February 8, 2026)
+- **Output Directory Fix**: Fixed issue where output files were being created in project root instead of dedicated `outputs/` directory
+- **Git Exclusion**: Properly configured `.gitignore` to exclude output files from version control while preserving directory structure with `.keep` files
+- **Large Document Processing**: Added intelligent chunking processor for handling very large documents that exceed model context limits
+- **File Organization**: Moved `large_document_processor.py` to proper `core/` directory location with corrected import paths
+
 ### v2.4.0 (February 7, 2026)
 - **Document Processing Support**: Added ability to read and synthesize knowledge from PDF, EPUB, and MOBI files using specialized document readers
 - **Document Reader Infrastructure**: Created modular document reader system with factory pattern supporting PyMuPDF, ebooklib, and mobi libraries
