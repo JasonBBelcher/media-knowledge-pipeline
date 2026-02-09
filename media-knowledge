@@ -1,0 +1,25 @@
+#!/bin/bash
+# Media Knowledge Pipeline CLI Wrapper
+# Provides easy access to the Typer CLI interface
+
+# Check if we're in a virtual environment
+if [[ "$VIRTUAL_ENV" == "" ]]; then
+    echo "⚠️  Virtual environment not activated!"
+    echo "   Activating virtual environment automatically..."
+    
+    # Try to activate venv
+    if [[ -f "venv/bin/activate" ]]; then
+        source venv/bin/activate
+    elif [[ -f "media_knowledge_env/bin/activate" ]]; then
+        source media_knowledge_env/bin/activate
+    else
+        echo "❌ Virtual environment not found!"
+        echo "   Please install dependencies first:"
+        echo "   pip install -r requirements.txt"
+        echo "   pip install -e ."
+        exit 1
+    fi
+fi
+
+# Run the Typer CLI
+python -m src.media_knowledge.cli.app "$@"

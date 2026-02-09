@@ -1,0 +1,24 @@
+#!/bin/bash
+# Media Knowledge Pipeline Launcher Script
+
+# Check if virtual environment is activated
+if [[ "$VIRTUAL_ENV" == "" ]]; then
+    echo "⚠️  WARNING: Virtual environment not activated!"
+    echo "   For best results, activate the virtual environment first:"
+    echo "   \$ source venv/bin/activate"
+    echo "   Or if using media_knowledge_env:"
+    echo "   \$ source media_knowledge_env/bin/activate"
+    echo ""
+    read -p "Continue anyway? (y/N): " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Exiting..."
+        exit 0
+    fi
+fi
+
+echo "🚀 Launching Media Knowledge Pipeline Interactive Frontend..."
+echo ""
+
+# Launch the launcher script which launches the interactive frontend
+python src/media_knowledge/cli/launcher.py

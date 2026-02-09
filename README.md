@@ -309,6 +309,56 @@ python -c "import fitz; print('PyMuPDF OK'); import ebooklib; print('ebooklib OK
 python -c "import genanki; print('genanki OK'); import jsonschema; print('jsonschema OK')"
 ```
 
+## 🚀 Quick Start Guide
+
+Choose your preferred usage pattern:
+
+### Interactive Frontend (Recommended for New Users)
+Run the interactive menu-driven interface:
+```bash
+./media-knowledge-interactive
+```
+This provides a guided experience with ASCII art and step-by-step configuration.
+
+### Typer CLI (Recommended for Power Users)
+Use the modern command-line interface wrapper:
+```bash
+./media-knowledge --help
+./media-knowledge --version
+./media-knowledge status
+```
+
+Or use the direct module execution:
+```bash
+# Navigate to project directory
+cd /Users/jasonbelcher/Documents/code/media-knowledge-pipeline
+
+# Activate the virtual environment first
+source venv/bin/activate
+
+# Then run commands
+python -m src.media_knowledge.cli.app --help
+python -m src.media_knowledge.cli.app --version
+```
+
+### Common Examples
+```bash
+# System status
+./media-knowledge status
+
+# Process YouTube video
+./media-knowledge process media --input "https://youtube.com/watch?v=..."
+
+# Generate Anki flashcards
+./media-knowledge anki generate --input synthesis.json
+
+# Process documents
+./media-knowledge document process document.pdf
+
+# Batch process URLs
+./media-knowledge batch process-urls --urls youtube_urls.txt
+```
+
 ## 💻 Usage
 
 ### Modern Python CLI (Recommended)
@@ -321,7 +371,7 @@ The enhanced Python CLI provides a rich terminal experience with colorful output
 cd /Users/jasonbelcher/Documents/code/media-knowledge-pipeline
 
 # Activate the virtual environment (required for CLI commands)
-source media_knowledge_env/bin/activate
+source venv/bin/activate
 ```
 
 **Then you can use all CLI commands:**
