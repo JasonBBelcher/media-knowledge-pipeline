@@ -48,6 +48,7 @@ ENV/
 Thumbs.db
 
 # Project Specific
+outputs/
 output/
 *.wav
 *.mp3
