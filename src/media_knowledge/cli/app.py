@@ -132,18 +132,9 @@ def create_essay(
 
 
 @app.callback(no_args_is_help=True)
-def main_callback(
-    version: Optional[bool] = typer.Option(
-        None, "--version", "-v", 
-        help="Show version and exit",
-        is_eager=True,
-    ),
-):
+def main_callback():
     """Media Knowledge Pipeline CLI - Enhanced version"""
-    if version:
-        from media_knowledge import __version__
-        typer.echo(f"Media Knowledge Pipeline v{__version__}")
-        raise typer.Exit(code=0)
+    pass
 
 
 @app.command()
