@@ -15,7 +15,8 @@ try:
     from rich.table import Table
 except ImportError:
     print("Required packages not found. Please install typer and rich.")
-    sys.exit(1)
+    import sys
+    raise typer.Exit(code=1)
 
 # Add project root to path for imports
 project_root = Path(__file__).parent.parent.parent.parent.parent
@@ -62,11 +63,11 @@ def generate(
     # Validate input file exists
     if not input_path.exists():
         console.print(f"[red]Error:[/red] Input file not found: {input_path}")
-        sys.exit(1)
+        raise typer.Exit(code=1)
         
     if not input_path.suffix.lower() == '.json':
         console.print(f"[red]Error:[/red] Input must be a JSON file")
-        sys.exit(1)
+        raise typer.Exit(code=1)
     
     try:
         # Load JSON data
@@ -110,13 +111,13 @@ def generate(
             
     except json.JSONDecodeError as e:
         console.print(f"[red]Error:[/red] Invalid JSON in input file: {e}")
-        sys.exit(1)
+        raise typer.Exit(code=1)
     except AnkiGeneratorError as e:
         console.print(f"[red]Error:[/red] Anki generation failed: {e}")
-        sys.exit(1)
+        raise typer.Exit(code=1)
     except Exception as e:
         console.print(f"[red]Error:[/red] Unexpected error: {e}")
-        sys.exit(1)
+        raise typer.Exit(code=1)
 
 
 @app.command()

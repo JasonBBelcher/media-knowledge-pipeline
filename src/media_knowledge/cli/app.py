@@ -24,22 +24,45 @@ sys.path.insert(0, str(project_root))
 
 from media_knowledge.cli.commands import process, batch, playlist, scan, watch, document, anki
 
-# Import the existing documents essay generator
+# Import the existing documents essay generator - use absolute import
 try:
     from utils.essay_from_existing import ExistingDocumentsEssayGenerator
     EXISTING_DOCS_AVAILABLE = True
 except ImportError:
     EXISTING_DOCS_AVAILABLE = False
+    # Create a stub class
     class ExistingDocumentsEssayGenerator:
         def __init__(self):
             pass
         def generate_essay_from_files(self, directory, pattern="*.json", output_file=None):
             return {"status": "error", "error": "Feature not available"}
 
+
+def display_ascii_art():
+    """Display the ASCII art title for the CLI."""
+    try:
+        from art import text2art
+        media_art = text2art("MEDIA", font="standard")
+        knowledge_art = text2art("KNOWLEDGE", font="standard")
+        pipeline_art = text2art("PIPELINE", font="standard")
+        
+        print(media_art)
+        print(knowledge_art)
+        print(pipeline_art)
+        print()
+    except ImportError:
+        # Fallback to simple header if art library not available
+        print("=" * 60)
+        print("           MEDIA KNOWLEDGE PIPELINE")
+        print("=" * 60)
+        print()
+
+
 app = typer.Typer(
     name="media-knowledge",
     help="Extract and synthesize knowledge from video/audio content",
     no_args_is_help=True,
+    add_completion=False,
 )
 
 # Add subcommands
@@ -108,7 +131,7 @@ def create_essay(
         raise typer.Exit(code=1)
 
 
-@app.callback()
+@app.callback(no_args_is_help=True)
 def main_callback(
     version: Optional[bool] = typer.Option(
         None, "--version", "-v", 
@@ -120,7 +143,7 @@ def main_callback(
     if version:
         from media_knowledge import __version__
         typer.echo(f"Media Knowledge Pipeline v{__version__}")
-        raise typer.Exit()
+        raise typer.Exit(code=0)
 
 
 @app.command()
@@ -166,4 +189,14 @@ def status():
 
 
 if __name__ == "__main__":
+    # Check for version flag before running app
+    if "--version" in sys.argv or "-v" in sys.argv:
+        from media_knowledge import __version__
+        print(f"Media Knowledge Pipeline v{__version__}")
+        sys.exit(0)
+    
+    # Display ASCII art for main help
+    if len(sys.argv) == 1 or "--help" in sys.argv:
+        display_ascii_art()
+    
     app()

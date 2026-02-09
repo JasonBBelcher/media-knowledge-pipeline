@@ -14,7 +14,8 @@ try:
     from rich.table import Table
 except ImportError:
     print("Required packages not found. Please install typer and rich.")
-    sys.exit(1)
+    import sys
+    raise typer.Exit(code=1)
 
 # Add project root to path for imports
 project_root = Path(__file__).parent.parent.parent.parent.parent
