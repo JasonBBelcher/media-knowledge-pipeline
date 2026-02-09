@@ -1,6 +1,6 @@
 # Media-to-Knowledge Pipeline
 
-**Version: 2.4.0**
+**Version: 2.5.0**
 
 ## The Neural Distillation Protocol
 Directive 80/20: In a universe of infinite data streams, true power lies not in consumption, but in strategic extraction.
@@ -15,12 +15,19 @@ This repository is a Knowledge Assimilation Engine. It bypasses the noise of the
 
 ## 📋 Changelog
 
-### v2.4.1 (February 8, 2026)
+### v2.5.0 (February 9, 2026)
+- **Anki Integration**: Added new `anki` CLI command to generate flashcards from synthesis output with automatic card type classification and Anki deck generation
+- **Adapter Pattern Framework**: Created extensible output adapter system for transforming pipeline output to various formats
+- **Flashcard Generation**: Added Anki flashcard generation with support for concept definitions, Q&A pairs, events, and process steps
+- **Enhanced Prompt Templates**: Added specialized Anki prompt template for optimal flashcard content extraction
+- **Comprehensive CLI**: New `anki` command with subcommands for generating decks, previewing content, and viewing templates
+
+### v2.4.1 (February 9, 2026)
 - **Output Directory Fix**: Fixed issue where output files were being created in project root instead of dedicated `outputs/` directory
 - **Git Exclusion**: Properly configured `.gitignore` to exclude output files from version control while preserving directory structure with `.keep` files
 - **Large Document Processing**: Added intelligent chunking processor for handling very large documents that exceed model context limits
 - **File Organization**: Moved `large_document_processor.py` to proper `core/` directory location with corrected import paths
-- **Anki Integration**: Added new `anki` CLI command to generate flashcards from synthesis output with automatic card type classification and Anki deck generation
+- **Anki Integration Preparation**: Prepared infrastructure for Anki integration with core adapter framework and prompt enhancements
 
 ### v2.4.0 (February 7, 2026)
 - **Document Processing Support**: Added ability to read and synthesize knowledge from PDF, EPUB, and MOBI files using specialized document readers
