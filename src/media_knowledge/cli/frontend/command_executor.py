@@ -7,9 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Add project root to path for imports
-project_root = Path(__file__).parent.parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
+# Imports are relative now
 
 
 class CommandExecutor:
@@ -17,7 +15,7 @@ class CommandExecutor:
     
     def __init__(self):
         """Initialize command executor."""
-        self.base_command = [sys.executable, "-m", "src.media_knowledge.cli.app"]
+        self.base_command = [sys.executable, "-m", "media_knowledge.cli.app"]
     
     def execute_media_processing(self, config):
         """Execute media processing based on configuration.

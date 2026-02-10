@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "media-knowledge-pipeline"
-version = "2.4.0"
+version = "2.5.2"
 description = "Extract and synthesize knowledge from video/audio content"
 authors = [
     {name = "Jason Belcher", email = "belcher.jason@gmail.com"},
@@ -51,6 +51,7 @@ dev = [
 
 [project.scripts]
 media-knowledge = "media_knowledge.cli.app:app"
+media-knowledge-launch = "media_knowledge.cli.launcher:main"
 
 [project.urls]
 Homepage = "https://github.com/JasonBBelcher/media-knowledge-pipeline"

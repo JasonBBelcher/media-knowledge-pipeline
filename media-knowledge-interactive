@@ -21,4 +21,4 @@ echo "🚀 Launching Media Knowledge Pipeline Interactive Frontend..."
 echo ""
 
 # Launch the launcher script which launches the interactive frontend
-python src/media_knowledge/cli/launcher.py
+PYTHONPATH="${PWD}/src:${PYTHONPATH}" python src/media_knowledge/cli/launcher.py

@@ -13,8 +13,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from core.document_processor import DocumentProcessor
-from core.document_readers import DocumentReaderFactory
+# Import core modules dynamically within functions to avoid module not found errors
 
 app = typer.Typer(
     name="document", 
@@ -34,6 +33,15 @@ def process(
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress detailed output")
 ):
     """Process a single document file."""
+    
+    # Import core modules dynamically
+    import sys
+    from pathlib import Path
+    project_root = Path(__file__).parent.parent.parent.parent.parent
+    sys.path.insert(0, str(project_root))
+    
+    from core.document_processor import DocumentProcessor
+    from core.document_readers import DocumentReaderFactory
     
     if not quiet:
         console.print(f"[bold blue]Media Knowledge Pipeline - Document Processor[/bold blue]")
@@ -128,6 +136,14 @@ def batch(
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Suppress detailed output")
 ):
     """Process multiple documents in batch."""
+    
+    # Import core modules dynamically
+    import sys
+    from pathlib import Path
+    project_root = Path(__file__).parent.parent.parent.parent.parent
+    sys.path.insert(0, str(project_root))
+    from core.document_processor import DocumentProcessor
+    from core.document_readers import DocumentReaderFactory
     
     if not quiet:
         console.print(f"[bold blue]Media Knowledge Pipeline - Batch Document Processor[/bold blue]")
@@ -241,6 +257,13 @@ def batch(
 @app.command()
 def formats():
     """Show supported document formats."""
+    # Import dynamically
+    import sys
+    from pathlib import Path
+    project_root = Path(__file__).parent.parent.parent.parent.parent
+    sys.path.insert(0, str(project_root))
+    from core.document_readers import DocumentReaderFactory
+    
     supported_formats = DocumentReaderFactory.supported_formats()
     
     console.print(f"[bold blue]Supported Document Formats[/bold blue]")

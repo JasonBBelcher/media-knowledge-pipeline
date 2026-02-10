@@ -7,15 +7,13 @@ This module provides a friendly menu-driven interface for the CLI.
 import sys
 from pathlib import Path
 
-# Add project root to path for imports
-project_root = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
+# Imports are relative now
 
-from src.media_knowledge.cli.frontend.main_menu import MainMenu
-from src.media_knowledge.cli.frontend.document_wizard import DocumentWizard
-from src.media_knowledge.cli.frontend.media_wizard import MediaWizard
-from src.media_knowledge.cli.frontend.batch_wizard import BatchWizard
-from src.media_knowledge.cli.frontend.command_executor import CommandExecutor
+from .frontend.main_menu import MainMenu
+from .frontend.document_wizard import DocumentWizard
+from .frontend.media_wizard import MediaWizard
+from .frontend.batch_wizard import BatchWizard
+from .frontend.command_executor import CommandExecutor
 
 
 def run_interactive_frontend():

@@ -8,11 +8,7 @@ import re
 from pathlib import Path
 from urllib.parse import urlparse
 
-# Add project root to path for imports
-project_root = Path(__file__).parent.parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
-
-from src.media_knowledge.cli.frontend.main_menu import MainMenuError
+from .main_menu import MainMenuError
 
 
 class MediaWizardError(Exception):

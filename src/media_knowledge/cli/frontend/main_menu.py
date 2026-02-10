@@ -2,6 +2,8 @@
 Main Menu System for Media Knowledge Pipeline CLI Frontend
 """
 
+from pathlib import Path
+
 class MainMenuError(Exception):
     """Custom exception for main menu errors."""
     pass
@@ -48,7 +50,7 @@ class MainMenu:
         # ASCII art is now displayed by the launcher, so we just show the menu
         print("=" * 80)
         print("                        MEDIA KNOWLEDGE PIPELINE")
-        print("                          v2.4.0 - Enhanced")
+        print("                          v2.5.1 - Enhanced")
         print("=" * 80)
         print()
         print("=" * 80)
