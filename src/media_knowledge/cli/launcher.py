@@ -46,7 +46,7 @@ def main():
     
     # Launch the interactive frontend directly
     try:
-        from src.media_knowledge.cli.interactive import run_interactive_frontend
+        from .interactive import run_interactive_frontend
         run_interactive_frontend()
     except ImportError as e:
         print(f"Error importing interactive frontend: {e}")
