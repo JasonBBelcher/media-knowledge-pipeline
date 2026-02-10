@@ -50,7 +50,7 @@ class CommandExecutor:
                 command.extend(["--output", "results.json"])
             
             if config["output_config"]["save_markdown"]:
-                command.extend(["--markdown", "output"])
+                command.extend(["--markdown", "outputs/markdown"])
             
             # Add quiet option
             if config["processing_options"]["quiet"]:
