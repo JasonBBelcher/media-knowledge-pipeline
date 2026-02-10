@@ -46,11 +46,31 @@ def main():
     
     # Launch the interactive frontend directly
     try:
+        # Try relative import first (package context)
         from .interactive import run_interactive_frontend
         run_interactive_frontend()
     except ImportError as e:
-        print(f"Error importing interactive frontend: {e}")
-        print("Please ensure all dependencies are installed.")
+        # If relative import fails, try absolute import (direct execution)
+        try:
+            import sys
+            import os
+            # Add project root to path for imports
+            project_root = os.path.dirname(
+                os.path.dirname(
+                    os.path.dirname(
+                        os.path.dirname(
+                            os.path.dirname(__file__)
+                        )
+                    )
+                )
+            )
+            sys.path.insert(0, project_root)
+            from media_knowledge.cli.interactive import run_interactive_frontend
+            run_interactive_frontend()
+        except ImportError as e2:
+            print(f"Error importing interactive frontend: {e}")
+            print(f"Alternative import attempt failed: {e2}")
+            print("Please ensure all dependencies are installed.")
 
 
 if __name__ == "__main__":
