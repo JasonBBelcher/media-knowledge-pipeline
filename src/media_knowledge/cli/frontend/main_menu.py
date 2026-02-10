@@ -50,7 +50,16 @@ class MainMenu:
         # ASCII art is now displayed by the launcher, so we just show the menu
         print("=" * 80)
         print("                        MEDIA KNOWLEDGE PIPELINE")
-        print("                          v2.5.1 - Enhanced")
+        
+        # Read version from VERSION file
+        try:
+            version_path = Path(__file__).parent.parent.parent.parent.parent / "VERSION"
+            with open(version_path, 'r') as f:
+                version = f.read().strip()
+        except:
+            version = "2.5.2"
+        
+        print(f"                          v{version} - Enhanced")
         print("=" * 80)
         print()
         print("=" * 80)

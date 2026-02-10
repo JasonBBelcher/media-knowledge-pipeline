@@ -16,6 +16,7 @@ class CommandExecutor:
     def __init__(self):
         """Initialize command executor."""
         self.base_command = [sys.executable, "-m", "media_knowledge.cli.app"]
+        self.project_root = Path(__file__).parent.parent.parent.parent.parent
     
     def execute_media_processing(self, config):
         """Execute media processing based on configuration.
@@ -61,7 +62,7 @@ class CommandExecutor:
             print(f"\nExecuting command: {' '.join(command)}")
             
             # Execute command
-            result = subprocess.run(command, cwd=str(project_root))
+            result = subprocess.run(command, cwd=str(self.project_root))
             
             if result.returncode == 0:
                 print("\n✅ Media processing completed successfully!")
@@ -111,7 +112,7 @@ class CommandExecutor:
             print(f"\nExecuting command: {' '.join(command)}")
             
             # Execute command
-            result = subprocess.run(command, cwd=str(project_root))
+            result = subprocess.run(command, cwd=str(self.project_root))
             
             if result.returncode == 0:
                 print("\n✅ Document processing completed successfully!")
@@ -174,7 +175,7 @@ class CommandExecutor:
             print(f"\nExecuting command: {' '.join(command)}")
             
             # Execute command
-            result = subprocess.run(command, cwd=str(project_root))
+            result = subprocess.run(command, cwd=str(self.project_root))
             
             if result.returncode == 0:
                 print("\n✅ Batch processing completed successfully!")
