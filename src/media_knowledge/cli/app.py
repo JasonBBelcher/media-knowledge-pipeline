@@ -22,7 +22,7 @@ except ImportError:
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from media_knowledge.cli.commands import process, batch, playlist, scan, watch, document, anki
+from .commands import process, batch, playlist, scan, watch, document, anki
 
 # Import the existing documents essay generator - use absolute import
 try:
