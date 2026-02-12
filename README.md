@@ -2,18 +2,59 @@
 |  \/  || __||   \ |_ _|  /_\   | |/ /| \| | / _ \ \ \    / /| |   | __||   \  / __|| __|
 | |\/| || _| | |) | | |  / _ \  | ' < | .` || (_) | \ \/\/ / | |__ | _| | |) || (_ || _| 
 |_|  |_||___||___/ |___|/_/ \_\ |_|\_\|_|\_| \___/   \_/\_/  |____||___||___/  \___||___|
-                                                                                         
- ___  ___  ___  ___  _     ___  _  _  ___ 
+                                                                                          
+  ___  ___  ___  ___  _     ___  _  _  ___ 
 | _ \|_ _|| _ \| __|| |   |_ _|| \| || __|
 |  _/ | | |  _/| _| | |__  | | | .` || _| 
 |_|  |___||_|  |___||____||___||_|\_||___|
-                                          </pre>
+                                           </pre>
 
 <h1 align="center">Media-to-Knowledge Pipeline</h1>
 
 <p align="center">
-  <strong>Version 2.5.0</strong>
+  <strong>Version 2.5.2</strong>
 </p>
+
+## 🚀 Quick Start - User-Friendly CLI Commands
+
+### 🎯 **Simple Commands (just type these!)**
+
+| Command | What it does | Example |
+|---------|-------------|---------|
+| `media-knowledge-launch` | **Recommended!** Opens interactive menu | `media-knowledge-launch` |
+| `media-knowledge status` | Check if everything is ready | `media-knowledge status` |
+| `media-knowledge --help` | See all available commands | `media-knowledge --help` |
+
+### 🔧 **Interactive Mode (Easiest for Beginners)**
+```bash
+media-knowledge-launch
+```
+Then just type the number for what you want:
+```
+[1] Process Media Content (Video/Audio/Document)
+[2] Batch Process Multiple Items
+[3] Create Essay from Existing Results
+[4] Scan Directory for Media Files
+[6] System Status Check
+[0] Exit
+```
+
+### 📚 **Processing Commands**
+
+| Task | Command | Easy Version |
+|------|---------|--------------|
+| Process YouTube video | `media-knowledge process media --input "URL"` | `media-knowledge-launch` → 1 |
+| Process document | `media-knowledge document process file.pdf` | `media-knowledge-launch` → 1 → Document |
+| Generate flashcards | `media-knowledge anki generate --input results.json` | `media-knowledge-launch` → Anki |
+
+### 💡 **Pro Tips**
+- Use `media-knowledge-launch` for guided interaction
+- Always run `media-knowledge status` first to check system
+- Add `--help` to any command for detailed options: `media-knowledge process --help`
+
+---
+
+## 🧠 The Neural Distillation Protocol
 
 <br />
 
