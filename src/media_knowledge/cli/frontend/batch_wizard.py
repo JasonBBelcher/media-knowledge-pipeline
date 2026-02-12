@@ -25,6 +25,7 @@ class BatchWizard:
             "Research Presentation",
             "Podcast Summary",
             "Basic Summary",
+            "Anki Flashcards (Generate study cards)",
             "Custom Prompt"
         ]
         
@@ -164,7 +165,7 @@ class BatchWizard:
         
         while True:
             try:
-                choice = input("\nEnter choice (0-6): ").strip()
+                choice = input("\nEnter choice (0-7): ").strip()
                 if not choice:
                     print("Using default template: lecture_summary")
                     return "lecture_summary"
@@ -172,20 +173,21 @@ class BatchWizard:
                 choice_num = int(choice)
                 if choice_num == 0:
                     raise BatchWizardError("User cancelled")
-                elif 1 <= choice_num <= 5:
+                elif 1 <= choice_num <= 6:
                     # Map to template keys
                     template_keys = [
                         "lecture_summary",
                         "technical_tutorial", 
                         "research_presentation",
                         "podcast_summary",
-                        "basic_summary"
+                        "basic_summary",
+                        "anki_flashcards"
                     ]
                     return template_keys[choice_num - 1]
-                elif choice_num == 6:
+                elif choice_num == 7:
                     return "custom"
                 else:
-                    print("Please enter a number between 0 and 6.")
+                    print("Please enter a number between 0 and 7.")
             except ValueError:
                 print("Please enter a valid number.")
     

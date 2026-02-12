@@ -17,9 +17,10 @@ class MainMenu:
         self.menu_options = [
             "Process Media Content  (Video/Audio/Document)",
             "Batch Process Multiple Items",
-            "Create Essay from Existing Results", 
+            "Create Essay from Existing Results",
+            "Generate Anki Flashcards",
             "Scan Directory for Media Files",
-            "Watch Directory for New Files",
+            "Watch Directory for New Files", 
             "System Status and Requirements",
             "Show Pipeline Architecture",
             "Exit"
