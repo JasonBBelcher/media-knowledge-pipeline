@@ -215,6 +215,10 @@ class CommandExecutor:
                 # Add deck name if provided and not None/empty
                 if "deck_name" in config and config["deck_name"]:
                     command.extend(["--deck-name", config["deck_name"]])
+                
+                # Add preview flag if in preview mode
+                if config.get("preview", False):
+                    command.append("--preview")
             
             print(f"\nExecuting command: {' '.join(command)}")
             
@@ -222,7 +226,10 @@ class CommandExecutor:
             result = subprocess.run(command, cwd=str(self.project_root))
             
             if result.returncode == 0:
-                print("\n✅ Anki flashcard generation completed successfully!")
+                if config and config.get("preview", False):
+                    print("\n✅ Anki flashcard preview completed successfully!")
+                else:
+                    print("\n✅ Anki flashcard generation completed successfully!")
                 return True
             else:
                 print(f"\n❌ Anki generation failed with return code {result.returncode}")

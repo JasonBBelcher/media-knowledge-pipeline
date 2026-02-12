@@ -13,6 +13,7 @@ from .frontend.main_menu import MainMenu
 from .frontend.document_wizard import DocumentWizard
 from .frontend.media_wizard import MediaWizard
 from .frontend.batch_wizard import BatchWizard
+from .frontend.anki_wizard import AnkiWizard
 from .frontend.command_executor import CommandExecutor
 
 
@@ -74,7 +75,33 @@ def run_interactive_frontend():
             print("\nCreate Essay from Existing Results Selected")
             print("This feature will be implemented in a future update.")
             print("\nReturning to main menu...\n")
-        elif choice == 4:  # Scan Directory for Media Files
+        elif choice == 4:  # Generate Anki Flashcards
+            print("\nGenerate Anki Flashcards Selected")
+            anki_wizard = AnkiWizard()
+            config = anki_wizard.process_anki_interactive()
+            if config:
+                print("\nExecuting Anki generation with the following configuration:")
+                for key, value in config.items():
+                    print(f"  {key}: {value}")
+                
+                # Determine action based on preview mode
+                if config.get("preview"):
+                    action = "preview"
+                else:
+                    action = "generate"
+                
+                confirm = input(f"\nDo you want to {action} this Anki deck? [y/N]: ").strip().lower()
+                if confirm in ['y', 'yes']:
+                    # Use command executor for Anki generation
+                    success = executor.execute_anki_generation(config)
+                    if success:
+                        print("Anki flashcard generation completed successfully!")
+                    else:
+                        print("Anki generation failed. Check the error messages above.")
+                else:
+                    print("Anki generation cancelled.")
+            print("\nReturning to main menu...\n")
+        elif choice == 5:  # Scan Directory for Media Files
             print("\nScan Directory for Media Files Selected")
             print("This feature will be implemented in a future update.")
             print("\nReturning to main menu...\n")
