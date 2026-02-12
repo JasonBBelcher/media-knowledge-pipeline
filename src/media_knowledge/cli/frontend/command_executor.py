@@ -44,11 +44,17 @@ class CommandExecutor:
             elif config["custom_prompt"]:
                 command.extend(["--prompt", config["custom_prompt"]])
             
-            # Add output options
-            if config["output_config"]["save_json"]:
-                command.extend(["--output", "results.json"])
+            # Add output options - use custom paths when provided, otherwise enable saving
+            if config["output_config"].get("output_path"):
+                # Use custom or auto-named path in outputs directory
+                command.extend(["--output", config["output_config"]["output_path"]])
+            elif config["output_config"]["save_json"]:
+                # Enable saving with intelligent naming
+                command.extend(["--output", "outputs/auto_generated_results.json"])
             
-            if config["output_config"]["save_markdown"]:
+            if config["output_config"].get("markdown_path"):
+                command.extend(["--markdown", config["output_config"]["markdown_path"]])
+            elif config["output_config"]["save_markdown"]:
                 command.extend(["--markdown", "outputs/markdown"])
             
             # Add quiet option
@@ -186,6 +192,44 @@ class CommandExecutor:
                 
         except Exception as e:
             print(f"\n❌ Error executing batch processing: {e}")
+            return False
+
+    def execute_anki_generation(self, config=None):
+        """Execute Anki flashcard generation based on configuration.
+        
+        Args:
+            config (dict, optional): Anki generation configuration from wizard
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Build command based on configuration
+            command = self.base_command + ["anki", "generate"]
+            
+            if config:
+                # Add input file
+                if "input_file" in config and config["input_file"]:
+                    command.extend(["--input", config["input_file"]])
+                
+                # Add deck name if provided and not None/empty
+                if "deck_name" in config and config["deck_name"]:
+                    command.extend(["--deck-name", config["deck_name"]])
+            
+            print(f"\nExecuting command: {' '.join(command)}")
+            
+            # Execute command
+            result = subprocess.run(command, cwd=str(self.project_root))
+            
+            if result.returncode == 0:
+                print("\n✅ Anki flashcard generation completed successfully!")
+                return True
+            else:
+                print(f"\n❌ Anki generation failed with return code {result.returncode}")
+                return False
+                
+        except Exception as e:
+            print(f"\n❌ Error executing Anki generation: {e}")
             return False
 
 
