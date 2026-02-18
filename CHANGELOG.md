@@ -5,6 +5,13 @@ All notable changes to the Media Knowledge Pipeline will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.1] - 2026-02-18
+
+### Fixed
+- Fixed template detection errors when using custom prompts
+- Replaced flawed heuristic (prompts starting with 'Summarize' = custom) with validity-based detection
+- Now properly checks if prompt is valid template key first, falls back to custom prompt
+97
 ## [2.6.0] - 2026-02-12
 
 ### Added
