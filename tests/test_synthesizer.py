@@ -466,6 +466,46 @@ class TestSynthesisResultStructure:
         for key in expected_keys:
             assert key in result, f"Missing key: {key}"
 
+    @patch('core.synthesizer.format_template')
+    @patch('core.synthesizer.KnowledgeSynthesizer._call_local_ollama')
+    @patch('core.synthesizer.get_config')
+    def test_synthesize_with_custom_prompt_not_starting_with_summarize(self, mock_get_config, mock_call, mock_format):
+        """Test synthesis with custom prompt that doesn't start with 'Summarize'."""
+        mock_config = MagicMock()
+        mock_config.ollama_base_url = "http://localhost:11434"
+        mock_config.ollama_model = "llama3.1:8b"
+        mock_config.default_synthesis_prompt_template = "basic_summary"
+        mock_get_config.return_value = mock_config
+        
+        # Mock format_template to raise ValueError for non-template keys, simulating actual behavior
+        def side_effect(template_key, transcript):
+            # Only accept valid template keys
+            valid_templates = [
+                "basic_summary", "meeting_minutes", "lecture_summary", "tutorial_guide",
+                "project_update", "customer_feedback", "research_summary", "interview_summary",
+                "blog_post_outline", "social_media_content", "technical_documentation", 
+                "bug_report_summary", "anki_flashcards", "filename_subject", "synthesis_essay",
+                "content_cohesion_check"
+            ]
+            if template_key not in valid_templates:
+                raise ValueError(f"Template '{template_key}' not found. Available templates: {', '.join(valid_templates)}")
+            return f"Formatted {template_key} prompt"
+        
+        mock_format.side_effect = side_effect
+        mock_call.return_value = "Custom prompt result"
+        
+        synthesizer = KnowledgeSynthesizer(use_cloud=False)
+        
+        # This represents the problematic case - a custom prompt that doesn't start with "Summarize"
+        custom_prompt = "Please extract the main points of what is being said, synthesize into an action plan for those that want to evolve with A.I agentic systems."
+        
+        # When properly implemented, this should be processed as a custom prompt
+        result = synthesizer.synthesize("Test transcript", custom_prompt=custom_prompt)
+        
+        assert result["raw_text"] == "Custom prompt result"
+        assert result["template_used"] == "custom"
+        mock_call.assert_called_once_with(custom_prompt)
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

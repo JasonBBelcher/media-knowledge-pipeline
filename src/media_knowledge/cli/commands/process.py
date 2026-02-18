@@ -64,11 +64,25 @@ def media(
             if not quiet:
                 progress.add_task("Processing media...", total=None)
             
+            # Properly distinguish between template keys and custom prompts
+            prompt_template = None
+            custom_prompt = None
+            
+            if prompt:
+                # Try to use as template key first
+                from core.prompts import get_template
+                if get_template(prompt):
+                    # Valid template key
+                    prompt_template = prompt
+                else:
+                    # Not a valid template key, treat as custom prompt
+                    custom_prompt = prompt
+
             results = process_media(
                 media_path=input_path,
                 use_cloud_synth=cloud,
-                prompt_template=prompt if prompt and not prompt.startswith("Summarize") else None,
-                custom_prompt=prompt if prompt and prompt.startswith("Summarize") else None
+                prompt_template=prompt_template,
+                custom_prompt=custom_prompt
             )
         
         # Handle results

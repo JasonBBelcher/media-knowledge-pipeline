@@ -809,11 +809,25 @@ def _handle_process_command(args):
     
     # Process the media file
     try:
+        # Properly distinguish between template keys and custom prompts
+        prompt_template = None
+        custom_prompt = None
+        
+        if args.prompt:
+            # Try to use as template key first
+            from core.prompts import get_template
+            if get_template(args.prompt):
+                # Valid template key
+                prompt_template = args.prompt
+            else:
+                # Not a valid template key, treat as custom prompt
+                custom_prompt = args.prompt
+        
         results = process_media(
             media_path=args.input,
             use_cloud_synth=args.cloud,
-            prompt_template=args.prompt if args.prompt and not args.prompt.startswith("Summarize") else None,
-            custom_prompt=args.prompt if args.prompt and args.prompt.startswith("Summarize") else None
+            prompt_template=prompt_template,
+            custom_prompt=custom_prompt
         )
         
         # Display or save results
@@ -1249,11 +1263,25 @@ def _process_single_url(url: str, args) -> dict:
     """
     try:
         # Process the media file
+        # Properly distinguish between template keys and custom prompts
+        prompt_template = None
+        custom_prompt = None
+        
+        if args.prompt:
+            # Try to use as template key first
+            from core.prompts import get_template
+            if get_template(args.prompt):
+                # Valid template key
+                prompt_template = args.prompt
+            else:
+                # Not a valid template key, treat as custom prompt
+                custom_prompt = args.prompt
+        
         results = process_media(
             media_path=url,
             use_cloud_synth=args.cloud,
-            prompt_template=args.prompt if args.prompt and not args.prompt.startswith("Summarize") else None,
-            custom_prompt=args.prompt if args.prompt and args.prompt.startswith("Summarize") else None
+            prompt_template=prompt_template,
+            custom_prompt=custom_prompt
         )
         
         if results["status"] == "success":
